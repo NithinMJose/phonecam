@@ -2,9 +2,13 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
+using Windows.Win32;
+using Windows.Win32.Foundation;
+using Windows.Win32.Graphics.Dwm;
 using PhoneCam.Audio;
 using PhoneCam.Logging;
 using PhoneCam.Net;
@@ -122,6 +126,23 @@ public partial class MainWindow : Window
         Closing += OnWindowClosing;
     }
 
+    protected override void OnSourceInitialized(EventArgs e)
+    {
+        base.OnSourceInitialized(e);
+        try
+        {
+            var hwnd = new HWND(new WindowInteropHelper(this).Handle);
+            int useDark = 1;
+            unsafe
+            {
+                PInvoke.DwmSetWindowAttribute(hwnd, DWMWINDOWATTRIBUTE.DWMWA_USE_IMMERSIVE_DARK_MODE, &useDark, sizeof(int));
+            }
+        }
+        catch
+        {
+        }
+    }
+
     private void ApplySettingsToUi()
     {
         string resTag = $"{_settings.Width}x{_settings.Height}";
@@ -203,7 +224,12 @@ public partial class MainWindow : Window
         _currentFps = 0;
         _currentMbps = 0;
         _lastRttMs = 0;
-        Dispatcher.BeginInvoke(() => TxtStats.Text = "Waiting for stream...");
+        Dispatcher.BeginInvoke(() =>
+        {
+            _bitmap = null;
+            VideoPreview.Source = null;
+            TxtStats.Text = "Waiting for stream...";
+        });
     }
 
     private async void OnStreamInfoReceived(WireProtocol.StreamInfo info)

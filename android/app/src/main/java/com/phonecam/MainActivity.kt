@@ -31,6 +31,7 @@ import java.util.Locale
 class MainActivity : AppCompatActivity() {
 
     private lateinit var tvStatus: TextView
+    private lateinit var viewStatusDot: View
     private lateinit var tvStats: TextView
     private lateinit var tvError: TextView
     private lateinit var tvHostLabel: TextView
@@ -97,6 +98,7 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         tvStatus = findViewById(R.id.tvStatus)
+        viewStatusDot = findViewById(R.id.viewStatusDot)
         tvStats = findViewById(R.id.tvStats)
         tvError = findViewById(R.id.tvError)
         tvHostLabel = findViewById(R.id.tvHostLabel)
@@ -181,11 +183,13 @@ class MainActivity : AppCompatActivity() {
         prefs.edit().putBoolean("wifi_mode", useWifi).apply()
 
         val activeTint = ColorStateList.valueOf(Color.parseColor("#2563EB"))
-        val inactiveTint = ColorStateList.valueOf(Color.parseColor("#374151"))
+        val inactiveTint = ColorStateList.valueOf(Color.parseColor("#1E2532"))
 
         if (useWifi) {
             btnModeUsb.backgroundTintList = inactiveTint
+            btnModeUsb.setTextColor(Color.parseColor("#9CA3AF"))
             btnModeWifi.backgroundTintList = activeTint
+            btnModeWifi.setTextColor(Color.WHITE)
             tvHostLabel.text = "PC WiFi / Hotspot IP"
             btnDiscover.visibility = View.VISIBLE
             tvDiscoveryHint.visibility = View.VISIBLE
@@ -201,7 +205,9 @@ class MainActivity : AppCompatActivity() {
             }
         } else {
             btnModeUsb.backgroundTintList = activeTint
+            btnModeUsb.setTextColor(Color.WHITE)
             btnModeWifi.backgroundTintList = inactiveTint
+            btnModeWifi.setTextColor(Color.parseColor("#9CA3AF"))
             tvHostLabel.text = "Target Host (127.0.0.1 for USB adb reverse)"
             btnDiscover.visibility = View.GONE
             tvDiscoveryHint.visibility = View.GONE
@@ -279,6 +285,16 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
                 btnToggle.text = if (st.isRunning) "Stop Streaming" else "Start Streaming"
+                btnToggle.backgroundTintList = ColorStateList.valueOf(
+                    Color.parseColor(if (st.isRunning) "#DC2626" else "#2563EB")
+                )
+                val dotColor = when {
+                    st.errorText != null && !st.isRunning -> "#F87171"
+                    st.isConnected -> "#34D399"
+                    st.isRunning -> "#FBBF24"
+                    else -> "#60A5FA"
+                }
+                viewStatusDot.backgroundTintList = ColorStateList.valueOf(Color.parseColor(dotColor))
                 btnModeUsb.isEnabled = !st.isRunning
                 btnModeWifi.isEnabled = !st.isRunning
                 btnDiscover.isEnabled = !st.isRunning
