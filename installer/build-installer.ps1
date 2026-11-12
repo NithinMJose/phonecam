@@ -17,6 +17,21 @@ dotnet publish (Join-Path $root "windows-app\PhoneCam\PhoneCam.csproj") `
     -o $stagingApp
 if ($LASTEXITCODE -ne 0) { throw "dotnet publish failed" }
 
+$adbCmd = Get-Command adb.exe -ErrorAction SilentlyContinue
+$platformToolsCandidates = @(
+    "$env:LOCALAPPDATA\Android\Sdk\platform-tools",
+    $(if ($adbCmd) { Split-Path -Parent $adbCmd.Source })
+) | Where-Object { $_ -and (Test-Path (Join-Path $_ "adb.exe")) } | Select-Object -First 1
+if ($platformToolsCandidates) {
+    foreach ($f in @("adb.exe", "AdbWinApi.dll", "AdbWinUsbApi.dll")) {
+        $srcFile = Join-Path $platformToolsCandidates $f
+        if (Test-Path $srcFile) {
+            Copy-Item $srcFile $stagingApp -Force
+        }
+    }
+    Write-Host "  Bundled adb platform-tools from $platformToolsCandidates" -ForegroundColor DarkGray
+}
+
 Write-Host "[3/4] Building Android Release APK..." -ForegroundColor Cyan
 Push-Location (Join-Path $root "android")
 try {

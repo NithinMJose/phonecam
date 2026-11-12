@@ -42,6 +42,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var btnModeUsb: Button
     private lateinit var btnModeWifi: Button
     private lateinit var btnDiscover: Button
+    private lateinit var btnHelpToggle: Button
+    private lateinit var layoutHelp: View
     private lateinit var btnAdvancedToggle: Button
     private lateinit var layoutAdvanced: View
     private lateinit var chkAutoStart: CheckBox
@@ -55,6 +57,7 @@ class MainActivity : AppCompatActivity() {
 
     private var selectedFrontCamera = false
     private var wifiMode = false
+    private var helpExpanded = false
     private var advancedExpanded = false
     private var suppressMicCheckEvent = false
 
@@ -113,9 +116,17 @@ class MainActivity : AppCompatActivity() {
         btnModeUsb = findViewById(R.id.btnModeUsb)
         btnModeWifi = findViewById(R.id.btnModeWifi)
         btnDiscover = findViewById(R.id.btnDiscover)
+        btnHelpToggle = findViewById(R.id.btnHelpToggle)
+        layoutHelp = findViewById(R.id.layoutHelp)
         btnAdvancedToggle = findViewById(R.id.btnAdvancedToggle)
         layoutAdvanced = findViewById(R.id.layoutAdvanced)
         chkAutoStart = findViewById(R.id.chkAutoStart)
+
+        btnHelpToggle.setOnClickListener {
+            helpExpanded = !helpExpanded
+            layoutHelp.visibility = if (helpExpanded) View.VISIBLE else View.GONE
+            btnHelpToggle.text = if (helpExpanded) "How to Connect (Guide) ▴" else "How to Connect (Guide) ▾"
+        }
 
         btnAdvancedToggle.setOnClickListener {
             advancedExpanded = !advancedExpanded

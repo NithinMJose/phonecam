@@ -57,6 +57,9 @@ public static class AdbHelper
 
     private static string? FindAdbPath()
     {
+        var bundledAdb = Path.Combine(AppContext.BaseDirectory, "adb.exe");
+        if (File.Exists(bundledAdb)) return bundledAdb;
+
         var localSdkAdb = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             "Android", "Sdk", "platform-tools", "adb.exe");

@@ -1,7 +1,7 @@
 [Setup]
 AppId={{7B5E9A41-2C3D-4F88-9A1E-4D5F6A7B8C9D}
 AppName=PhoneCam
-AppVersion=1.2.2
+AppVersion=1.2.3
 AppPublisher=NithinMJose
 DefaultDirName={autopf}\PhoneCam
 DefaultGroupName=PhoneCam
@@ -46,6 +46,7 @@ Filename: "{app}\PhoneCam.exe"; Description: "{cm:LaunchProgram,PhoneCam}"; Flag
 
 [UninstallRun]
 Filename: "{sys}\taskkill.exe"; Parameters: "/F /IM PhoneCam.exe"; Flags: runhidden waituntilterminated; RunOnceId: "KillPhoneCam"
+Filename: "{sys}\taskkill.exe"; Parameters: "/F /IM adb.exe"; Flags: runhidden waituntilterminated; RunOnceId: "KillAdb"
 Filename: "{sys}\regsvr32.exe"; Parameters: "/s /u ""{app}\PhoneCamVirtualCam.dll"""; Flags: runhidden waituntilterminated; RunOnceId: "UnregPhoneCam"
 Filename: "{sys}\netsh.exe"; Parameters: "advfirewall firewall delete rule name=""PhoneCam"""; Flags: runhidden waituntilterminated; RunOnceId: "DelFwPhoneCam"
 

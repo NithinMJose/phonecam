@@ -22,7 +22,7 @@ A minimal, low-latency **phone-as-webcam** system for **Android 16 + Windows 11*
 ## Quick Install (Built Artifacts)
 
 Running `installer\build-installer.ps1` produces standalone distributables in `installer\output\`:
-- **`PhoneCamSetup.exe`** — Self-contained Windows 11 installer (no `.NET` or Visual Studio required on target PCs). Automatically installs `PhoneCam.exe` + `PhoneCamVirtualCam.dll`, grants Frame Server permissions, registers the COM DLL via `regsvr32`, adds a Windows Firewall rule for WiFi/Hotspot, and optionally enables minimized startup at Windows login.
+- **`PhoneCamSetup.exe`** — Self-contained Windows 11 installer (no `.NET`, Android SDK, or Visual Studio required on target PCs). Automatically installs `PhoneCam.exe`, `PhoneCamVirtualCam.dll`, and bundled `adb.exe`, grants Frame Server permissions, registers the COM DLL via `regsvr32`, adds a Windows Firewall rule for WiFi/Hotspot, and optionally enables minimized startup at Windows login.
 - **`PhoneCam.apk`** — Android APK ready to sideload onto any Android 11+ phone.
 
 ---

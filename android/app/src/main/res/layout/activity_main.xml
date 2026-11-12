@@ -203,6 +203,53 @@
             android:visibility="gone" />
     </LinearLayout>
 
+    <!-- Collapsible Noob-Friendly Instructions Card -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:background="@drawable/bg_card"
+        android:orientation="vertical"
+        android:padding="14dp">
+
+        <Button
+            android:id="@+id/btnHelpToggle"
+            android:layout_width="match_parent"
+            android:layout_height="34dp"
+            android:background="@android:color/transparent"
+            android:gravity="center_vertical|start"
+            android:minHeight="0dp"
+            android:paddingStart="2dp"
+            android:paddingTop="0dp"
+            android:paddingEnd="2dp"
+            android:paddingBottom="0dp"
+            android:stateListAnimator="@null"
+            android:text="How to Connect (Guide) ▾"
+            android:textAllCaps="false"
+            android:textColor="#93C5FD"
+            android:textSize="13.5sp"
+            android:textStyle="bold" />
+
+        <LinearLayout
+            android:id="@+id/layoutHelp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_inner_pill"
+                android:lineSpacingExtra="3dp"
+                android:padding="12dp"
+                android:text="On PC: Just install &amp; open PhoneCam (nothing else to configure).\n\n1. WiFi / Hotspot (Easiest — No Cables)\n• Connect PC &amp; phone to the same WiFi (or your Phone Hotspot).\n• Tap WiFi / Hotspot above → Find My PC → Start Camera.\n\n2. USB without Developer Mode\n• Plug in USB cable and turn USB Tethering ON in phone Settings.\n• Tap WiFi / Hotspot above → Find My PC → Start Camera.\n\n3. USB Cable (Fastest — One-Time Setup)\n• Enable Developer options → USB debugging once, then tap Allow on the phone popup.\n• Tap USB Cable above → Start Camera.\n\nFinally: In Zoom, Google Meet, Teams, or Camera, choose 'PhoneCam (Windows Virtual Camera)'."
+                android:textColor="#D1D5DB"
+                android:textSize="12.5sp" />
+        </LinearLayout>
+    </LinearLayout>
+
     <!-- Collapsible Advanced & Details Section (hidden for simplicity by default) -->
     <LinearLayout
         android:id="@+id/layoutAdvanced"
