@@ -64,12 +64,27 @@ public sealed class TcpStreamServer : IAsyncDisposable
         if (_cts != null) return;
         _listeningPort = port;
         _cts = new CancellationTokenSource();
-        _listener = new TcpListener(IPAddress.Any, port);
-        _listener.Start();
-        var waitingText = BuildWaitingStatus();
-        StatusChanged?.Invoke(waitingText);
-        _logger.Log($"TCP server listening on 0.0.0.0:{port}", force: true);
-        _acceptTask = Task.Run(() => AcceptLoopAsync(_cts.Token));
+        try
+        {
+            _listener = new TcpListener(IPAddress.Any, port);
+            _listener.Start();
+            var waitingText = BuildWaitingStatus();
+            StatusChanged?.Invoke(waitingText);
+            _logger.Log($"TCP server listening on 0.0.0.0:{port}", force: true);
+            _acceptTask = Task.Run(() => AcceptLoopAsync(_cts.Token));
+        }
+        catch (SocketException ex) when (ex.SocketErrorCode == SocketError.AddressAlreadyInUse)
+        {
+            string msg = $"Port {port} already in use — close any other PhoneCam instance.";
+            StatusChanged?.Invoke(msg);
+            _logger.Log(msg, force: true);
+        }
+        catch (Exception ex)
+        {
+            string msg = $"Failed to listen on port {port}: {ex.Message}";
+            StatusChanged?.Invoke(msg);
+            _logger.Log(msg, force: true);
+        }
     }
 
     private string BuildWaitingStatus()

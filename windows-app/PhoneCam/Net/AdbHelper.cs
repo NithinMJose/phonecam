@@ -11,7 +11,7 @@ public static class AdbHelper
         var adbPath = FindAdbPath();
         if (adbPath == null)
         {
-            return (false, "adb.exe not found (install platform-tools or add to PATH)");
+            return (false, "adb.exe not found (USB mode needs platform-tools; WiFi still works)");
         }
 
         try
@@ -40,8 +40,13 @@ public static class AdbHelper
             }
 
             string err = string.IsNullOrWhiteSpace(stderr) ? stdout : stderr;
-            logger.Log($"adb reverse failed ({proc.ExitCode}): {err.Trim()}", force: true);
-            return (false, $"adb reverse failed: {err.Trim()}");
+            string clean = err.Trim();
+            if (clean.Contains("no devices", StringComparison.OrdinalIgnoreCase))
+            {
+                clean = "No USB phone detected (WiFi still works)";
+            }
+            logger.Log($"adb reverse skipped ({proc.ExitCode}): {clean}", force: true);
+            return (false, clean);
         }
         catch (Exception ex)
         {

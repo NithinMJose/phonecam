@@ -61,9 +61,15 @@ public unsafe sealed class VirtualCameraHost : IDisposable
             catch (Exception ex)
             {
                 StopInternal();
-                string hint = ex.HResult == unchecked((int)0x80040154)
-                    ? "Virtual Cam: DLL not registered yet (run regsvr32)"
-                    : $"Virtual Cam unavailable (0x{ex.HResult:X8}: {ex.Message})";
+                string hint = ex.HResult switch
+                {
+                    unchecked((int)0x80040154) =>
+                        "Virtual Cam DLL not registered — run installer or setup-and-register.ps1 as Admin.",
+                    unchecked((int)0x80070005) =>
+                        "Camera privacy blocked Virtual Camera (Settings > Privacy & security > Camera).",
+                    _ =>
+                        $"Virtual Cam unavailable (0x{ex.HResult:X8}: {ex.Message})"
+                };
                 _logger.Log(hint, force: true);
                 return (false, hint);
             }

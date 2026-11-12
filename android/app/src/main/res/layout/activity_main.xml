@@ -158,11 +158,21 @@
         android:textColor="#F3F4F6"
         android:textColorHint="#6B7280" />
 
+    <CheckBox
+        android:id="@+id/chkAutoStart"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:buttonTint="#60A5FA"
+        android:text="Auto-start streaming when app opens"
+        android:textColor="#D1D5DB"
+        android:textSize="13sp" />
+
     <Button
         android:id="@+id/btnSwitchCam"
         android:layout_width="match_parent"
         android:layout_height="46dp"
-        android:layout_marginTop="18dp"
+        android:layout_marginTop="10dp"
         android:backgroundTint="#374151"
         android:text="Camera: Back"
         android:textAllCaps="false"

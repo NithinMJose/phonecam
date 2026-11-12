@@ -328,7 +328,7 @@ class TcpStreamClient(
                     }
                 }
             } catch (t: Throwable) {
-                disconnectReason = t.message ?: t.javaClass.simpleName
+                disconnectReason = formatDisconnectReason(t)
             } finally {
                 connected.set(false)
                 closeSocketQuietly(sock)
@@ -471,6 +471,21 @@ class TcpStreamClient(
             }
             pongQueue.clear()
             pendingStreamInfo.clear()
+        }
+    }
+
+    private fun formatDisconnectReason(t: Throwable): String {
+        val raw = t.message ?: t.javaClass.simpleName
+        return when {
+            raw.contains("ECONNREFUSED", ignoreCase = true) ->
+                if (host == "127.0.0.1") {
+                    "PC not listening (start PhoneCam or tap USB Re-bind)"
+                } else {
+                    "Connection refused by $host:$port (check Windows PhoneCam & Firewall)"
+                }
+            raw.contains("timed out", ignoreCase = true) || t is java.net.SocketTimeoutException ->
+                "Timed out reaching $host:$port (check WiFi / Firewall)"
+            else -> raw
         }
     }
 

@@ -10,6 +10,7 @@ import android.os.Build
 import android.os.Bundle
 import android.view.View
 import android.widget.Button
+import android.widget.CheckBox
 import android.widget.EditText
 import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
@@ -39,6 +40,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var btnModeUsb: Button
     private lateinit var btnModeWifi: Button
     private lateinit var btnDiscover: Button
+    private lateinit var chkAutoStart: CheckBox
     private lateinit var btnSwitchCam: Button
     private lateinit var btnToggle: Button
 
@@ -78,11 +80,25 @@ class MainActivity : AppCompatActivity() {
         btnModeUsb = findViewById(R.id.btnModeUsb)
         btnModeWifi = findViewById(R.id.btnModeWifi)
         btnDiscover = findViewById(R.id.btnDiscover)
+        chkAutoStart = findViewById(R.id.chkAutoStart)
         btnSwitchCam = findViewById(R.id.btnSwitchCam)
         btnToggle = findViewById(R.id.btnToggle)
 
         wifiMode = prefs.getBoolean("wifi_mode", false)
         applyTransportMode(wifiMode, triggerAutoScan = false)
+
+        chkAutoStart.isChecked = prefs.getBoolean("auto_start", false)
+        chkAutoStart.setOnCheckedChangeListener { _, isChecked ->
+            prefs.edit().putBoolean("auto_start", isChecked).apply()
+        }
+
+        if (chkAutoStart.isChecked &&
+            !CameraStreamService.state.value.isRunning &&
+            hasPermission(Manifest.permission.CAMERA) &&
+            etHost.text.toString().trim().isNotEmpty()
+        ) {
+            startStreamingService()
+        }
 
         btnModeUsb.setOnClickListener {
             if (!CameraStreamService.state.value.isRunning) {

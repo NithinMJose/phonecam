@@ -29,3 +29,7 @@ virtualcam-dll/build/
 .DS_Store
 Thumbs.db
 
+# Installer build artifacts
+installer/staging/
+installer/output/
+

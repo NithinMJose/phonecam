@@ -108,6 +108,9 @@
                                   Unchecked="TransformOption_Changed" Foreground="#D1D5DB" Margin="0,0,0,12" />
 
                         <TextBlock Text="Window Behavior" FontSize="12" Foreground="#9CA3AF" Margin="0,4,0,6" />
+                        <CheckBox x:Name="ChkStartWithWindows" Content="Start minimized at Windows login"
+                                  Checked="ChkStartWithWindows_Changed" Unchecked="ChkStartWithWindows_Changed"
+                                  Foreground="#D1D5DB" Margin="0,0,0,6" />
                         <CheckBox x:Name="ChkMinimizeToTray" Content="Minimize to tray on close"
                                   Checked="ChkMinimizeToTray_Changed" Unchecked="ChkMinimizeToTray_Changed"
                                   Foreground="#D1D5DB" Margin="0,0,0,12" />

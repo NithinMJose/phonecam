@@ -43,6 +43,7 @@ public partial class MainWindow : Window
     private bool _uiReady;
     private bool _isExiting;
     private bool _syncedSettingsOnConnect;
+    private readonly bool _startMinimized;
 
     private long _bytesSinceLastStat;
     private int _framesSinceLastStat;
@@ -50,8 +51,13 @@ public partial class MainWindow : Window
     private double _currentFps;
     private double _currentMbps;
 
-    public MainWindow()
+    public MainWindow() : this(startMinimized: false)
     {
+    }
+
+    public MainWindow(bool startMinimized)
+    {
+        _startMinimized = startMinimized;
         InitializeComponent();
 
         _settings = AppSettings.Load();
@@ -79,6 +85,10 @@ public partial class MainWindow : Window
 
         Loaded += async (_, _) =>
         {
+            if (_startMinimized)
+            {
+                Hide();
+            }
             _sharedWriter.Initialize();
             _server.Start(WireProtocol.DefaultPort);
             _discovery.Start(WireProtocol.DefaultPort);
@@ -132,6 +142,7 @@ public partial class MainWindow : Window
         BtnSwitchCam.Content = _settings.UseFrontCamera ? "Cam: Front" : "Cam: Back";
         ChkMirrorH.IsChecked = _settings.MirrorHorizontal;
         ChkFlipV.IsChecked = _settings.FlipVertical;
+        ChkStartWithWindows.IsChecked = StartupManager.IsEnabled();
         ChkMinimizeToTray.IsChecked = _settings.MinimizeToTrayOnClose;
         ChkDebugLog.IsChecked = _settings.DebugLogEnabled;
 
@@ -462,6 +473,12 @@ public partial class MainWindow : Window
         ApplyTransform();
     }
 
+    private void ChkStartWithWindows_Changed(object sender, RoutedEventArgs e)
+    {
+        if (!_uiReady) return;
+        StartupManager.SetEnabled(ChkStartWithWindows.IsChecked == true);
+    }
+
     private void ChkMinimizeToTray_Changed(object sender, RoutedEventArgs e)
     {
         if (!_uiReady) return;
@@ -513,6 +530,8 @@ public partial class MainWindow : Window
     }
 
     private void BtnClearLog_Click(object sender, RoutedEventArgs e) => _logger.Clear();
+
+    public void RestoreWindowFromExternal() => RestoreFromTray();
 
     private void RestoreFromTray()
     {

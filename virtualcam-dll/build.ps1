@@ -20,6 +20,15 @@ New-Item -ItemType Directory -Force $outDir | Out-Null
 
 $objPath = Join-Path $outDir "PhoneCamVirtualCam.obj"
 $dllPath = Join-Path $outDir "PhoneCamVirtualCam.dll"
+$oldDllPath = Join-Path $outDir "PhoneCamVirtualCam.dll.old"
+Remove-Item $oldDllPath -Force -ErrorAction SilentlyContinue
+if (Test-Path $dllPath) {
+    try {
+        Remove-Item $dllPath -Force -ErrorAction Stop
+    } catch {
+        Move-Item $dllPath $oldDllPath -Force
+    }
+}
 $cmd = "`"$vcvars`" && cl /nologo /O2 /MT /EHsc /std:c++20 /DUNICODE /D_UNICODE /LD `"$PSScriptRoot\PhoneCamVirtualCam.cpp`" /Fo:`"$objPath`" /Fe:`"$dllPath`" /link /DEF:`"$PSScriptRoot\PhoneCamVirtualCam.def`" mfplat.lib mf.lib mfuuid.lib ole32.lib advapi32.lib"
 cmd.exe /c $cmd
 if ($LASTEXITCODE -ne 0) {
