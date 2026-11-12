@@ -1,0 +1,31 @@
+# Android
+android/.gradle/
+android/build/
+android/*/build/
+android/local.properties
+android/.idea/
+*.apk
+*.ap_
+*.aab
+
+# Windows / .NET
+windows-app/**/bin/
+windows-app/**/obj/
+windows-app/.vs/
+*.user
+*.suo
+
+# C++ Virtual Camera DLL
+virtualcam-dll/build/
+*.obj
+*.exp
+*.lib
+*.pdb
+*.dll
+*.exe
+
+# Logs & OS files
+*.log
+.DS_Store
+Thumbs.db
+
