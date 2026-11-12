@@ -5,7 +5,7 @@ A minimal, low-latency **phone-as-webcam** system for **Android 16 + Windows 11*
 - **Zero-copy capture & encode on Android:** `Camera2` renders straight into `MediaCodec`'s hardware H.264 `Surface` inside a Foreground Service (keeps streaming with the screen off).
 - **USB & WiFi/Hotspot transports:** `adb reverse` over USB (`127.0.0.1:18420`) or direct TCP + UDP auto-discovery (`18421`) over WiFi/hotspot with automatic reconnects.
 - **GPU decode & native Windows 11 Virtual Camera:** Media Foundation D3D11 hardware H.264 decoder feeds a triple-buffered shared-memory ring (`C:\ProgramData\PhoneCam\frame.shm`) read by a lightweight C++ COM DLL inside Windows Frame Server (`MFCreateVirtualCamera`).
-- **Live controls & auto-orientation:** Back/Front switching, resolution/FPS/bitrate/zoom, horizontal mirror & vertical flip, automatic portrait/landscape rotation (with centered pillarboxing so calls never break mid-stream), settings persistence, and system tray mode.
+- **Live controls & auto-orientation:** Back/Front switching, resolution/FPS/bitrate/zoom, horizontal mirror & vertical flip, automatic portrait/landscape rotation (with centered pillarboxing so calls never break mid-stream), **Phone Microphone -> Windows WASAPI Virtual Mic routing** (48 kHz mono PCM + hardware AEC/NS), settings persistence, and system tray mode.
 
 ---
 
@@ -69,7 +69,13 @@ Outputs `installer\output\PhoneCamSetup.exe` and `installer\output\PhoneCam.apk`
    - **USB mode:** Plug in USB with USB Debugging enabled (`PhoneCam.exe` automatically runs `adb reverse tcp:18420 tcp:18420`). Tap **Start Streaming**.
    - **WiFi / Hotspot mode:** Switch to **WiFi / Hotspot**, tap **Scan PC** (or enter the IP shown in Windows' status bar), and tap **Start Streaming**.
 3. In **Windows Camera**, **Zoom**, **Google Meet**, **Teams**, or your browser, select **`PhoneCam (Windows Virtual Camera)`**.
-4. Open **Settings** in the Windows app to adjust Resolution, FPS, Bitrate, Zoom, Mirror/Flip, Rotation offset, Tray behavior, and **Start minimized at Windows login**.
+4. Open **Settings** in the Windows app to adjust Resolution, FPS, Bitrate, Zoom, Mirror/Flip, Rotation offset, Microphone routing/gain, Tray behavior, and **Start minimized at Windows login**.
+
+### Using Phone Microphone in Zoom / Meet / Discord
+Windows 11 requires a kernel driver to register a system-wide recording endpoint. To expose your phone mic to call apps without enabling Windows Test Signing:
+1. Install free [VB-CABLE](https://vb-audio.com/Cable/) (or use the **Get VB-CABLE** button in PhoneCam Settings).
+2. In PhoneCam Settings, choose **`[Virtual Cable] CABLE Input (VB-Audio Virtual Cable)`** and click **Mic: ON**.
+3. In Zoom / Google Meet / Discord, select **`CABLE Output (VB-Audio Virtual Cable)`** as your Microphone.
 
 ---
 

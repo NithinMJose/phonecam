@@ -27,6 +27,8 @@
                             Background="#2A303C" Foreground="#F3F4F6" BorderThickness="0" />
                     <Button x:Name="BtnSwitchCam" Content="Cam: Back" Click="BtnSwitchCam_Click" Padding="10,5" Margin="0,0,8,0"
                             Background="#2A303C" Foreground="#F3F4F6" BorderThickness="0" />
+                    <Button x:Name="BtnMic" Content="Mic: OFF" Click="BtnMic_Click" Padding="10,5" Margin="0,0,8,0"
+                            Background="#2A303C" Foreground="#F3F4F6" BorderThickness="0" />
                     <Button x:Name="BtnAdbReverse" Content="USB Re-bind" Click="BtnAdbReverse_Click" Padding="10,5" Margin="0,0,8,0"
                             Background="#2A303C" Foreground="#F3F4F6" BorderThickness="0" />
                     <Button x:Name="BtnRotate" Content="Rot: Auto" Click="BtnRotate_Click" Padding="10,5" Margin="0,0,8,0"
@@ -106,6 +108,32 @@
                                   Unchecked="TransformOption_Changed" Foreground="#D1D5DB" Margin="0,0,0,6" />
                         <CheckBox x:Name="ChkFlipV" Content="Flip Vertical" Checked="TransformOption_Changed"
                                   Unchecked="TransformOption_Changed" Foreground="#D1D5DB" Margin="0,0,0,12" />
+
+                        <TextBlock Text="Microphone (Virtual Mic)" FontSize="12" Foreground="#9CA3AF" Margin="0,4,0,6" />
+                        <TextBlock x:Name="TxtVirtualMicStatus" Text="Checking audio devices..." FontSize="11"
+                                   Foreground="#FBBF24" TextWrapping="Wrap" Margin="0,0,0,6" />
+                        <CheckBox x:Name="ChkMicEnabled" Content="Enable Phone Microphone"
+                                  Checked="ChkMicEnabled_Changed" Unchecked="ChkMicEnabled_Changed"
+                                  Foreground="#D1D5DB" Margin="0,0,0,6" />
+                        <CheckBox x:Name="ChkMicMuted" Content="Mute Microphone"
+                                  Checked="ChkMicMuted_Changed" Unchecked="ChkMicMuted_Changed"
+                                  Foreground="#D1D5DB" Margin="0,0,0,8" />
+
+                        <TextBlock Text="Audio Output / Virtual Cable" FontSize="11" Foreground="#9CA3AF" />
+                        <ComboBox x:Name="CmbAudioDevice" SelectionChanged="CmbAudioDevice_SelectionChanged"
+                                  Margin="0,4,0,6" Padding="6,4" />
+                        <Button x:Name="BtnInstallVbCable" Content="Get VB-CABLE (Virtual Mic Driver)"
+                                Click="BtnInstallVbCable_Click" Padding="8,5" Margin="0,0,0,10"
+                                Background="#374151" Foreground="#93C5FD" BorderThickness="0" FontSize="11" />
+
+                        <DockPanel Margin="0,0,0,2">
+                            <TextBlock Text="Mic Gain" FontSize="12" Foreground="#9CA3AF" />
+                            <TextBlock x:Name="TxtMicGainValue" Text="100%" FontSize="12" Foreground="#F3F4F6" HorizontalAlignment="Right" />
+                        </DockPanel>
+                        <Slider x:Name="SldMicGain" Minimum="0" Maximum="250" TickFrequency="10" IsSnapToTickEnabled="True"
+                                Value="100" ValueChanged="SldMicGain_ValueChanged" Margin="0,2,0,6" />
+                        <ProgressBar x:Name="PrgMicLevel" Minimum="0" Maximum="100" Height="7" Margin="0,0,0,12"
+                                     Background="#0E1116" Foreground="#34D399" BorderThickness="0" />
 
                         <TextBlock Text="Window Behavior" FontSize="12" Foreground="#9CA3AF" Margin="0,4,0,6" />
                         <CheckBox x:Name="ChkStartWithWindows" Content="Start minimized at Windows login"

@@ -1,7 +1,7 @@
 [Setup]
 AppId={{7B5E9A41-2C3D-4F88-9A1E-4D5F6A7B8C9D}
 AppName=PhoneCam
-AppVersion=1.0.0
+AppVersion=1.1.0
 AppPublisher=NithinMJose
 DefaultDirName={autopf}\PhoneCam
 DefaultGroupName=PhoneCam

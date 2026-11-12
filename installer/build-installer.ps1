@@ -17,15 +17,17 @@ dotnet publish (Join-Path $root "windows-app\PhoneCam\PhoneCam.csproj") `
     -o $stagingApp
 if ($LASTEXITCODE -ne 0) { throw "dotnet publish failed" }
 
-Write-Host "[3/4] Building Android APK..." -ForegroundColor Cyan
+Write-Host "[3/4] Building Android Release APK..." -ForegroundColor Cyan
 Push-Location (Join-Path $root "android")
 try {
-    & .\gradlew.bat assembleDebug --no-daemon
+    & .\gradlew.bat assembleRelease --no-daemon
     if ($LASTEXITCODE -ne 0) { throw "Gradle build failed" }
 } finally {
     Pop-Location
 }
-$apkSrc = Join-Path $root "android\app\build\outputs\apk\debug\app-debug.apk"
+$apkRelease = Join-Path $root "android\app\build\outputs\apk\release\app-release.apk"
+$apkUnsigned = Join-Path $root "android\app\build\outputs\apk\release\app-release-unsigned.apk"
+$apkSrc = if (Test-Path $apkRelease) { $apkRelease } else { $apkUnsigned }
 $apkDst = Join-Path $outputDir "PhoneCam.apk"
 Copy-Item $apkSrc $apkDst -Force
 

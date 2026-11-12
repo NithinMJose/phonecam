@@ -5,6 +5,7 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
+using PhoneCam.Audio;
 using PhoneCam.Logging;
 using PhoneCam.Net;
 using PhoneCam.Protocol;
@@ -24,7 +25,10 @@ public partial class MainWindow : Window
     private readonly MediaFoundationH264Decoder _decoder;
     private readonly SharedFrameWriter _sharedWriter;
     private readonly VirtualCameraHost _virtualCam;
+    private readonly WasapiAudioPlayer _audioPlayer;
     private readonly SystemTrayIcon _trayIcon;
+    private readonly DispatcherTimer _audioLevelTimer;
+    private List<AudioDeviceInfo> _audioDevices = new();
 
     private readonly object _frameLock = new();
     private byte[] _backBgra = Array.Empty<byte>();
@@ -66,7 +70,10 @@ public partial class MainWindow : Window
         _decoder = new MediaFoundationH264Decoder(_logger);
         _sharedWriter = new SharedFrameWriter(_logger);
         _virtualCam = new VirtualCameraHost(_logger);
+        _audioPlayer = new WasapiAudioPlayer(_logger);
         _trayIcon = new SystemTrayIcon();
+        _audioLevelTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(60) };
+        _audioLevelTimer.Tick += (_, _) => PrgMicLevel.Value = _audioPlayer.CurrentLevel * 100.0;
 
         _trayIcon.ShowRequested += () => Dispatcher.BeginInvoke(RestoreFromTray);
         _trayIcon.SwitchCameraRequested += () => Dispatcher.BeginInvoke(() => BtnSwitchCam_Click(this, new RoutedEventArgs()));
@@ -78,6 +85,7 @@ public partial class MainWindow : Window
         _server.StreamInfoReceived += OnStreamInfoReceived;
         _server.CodecConfigReceived += OnCodecConfigReceived;
         _server.VideoFrameReceived += OnVideoFrameReceived;
+        _server.AudioFrameReceived += OnAudioFrameReceived;
         _server.RttUpdated += rtt => _lastRttMs = rtt;
 
         ApplySettingsToUi();
@@ -104,6 +112,11 @@ public partial class MainWindow : Window
             if (!ok)
             {
                 _logger.Log($"USB adb reverse skipped: {msg}", force: true);
+            }
+
+            if (_settings.MicEnabled)
+            {
+                StartAudioOutput();
             }
         };
         Closing += OnWindowClosing;
@@ -142,6 +155,17 @@ public partial class MainWindow : Window
         BtnSwitchCam.Content = _settings.UseFrontCamera ? "Cam: Front" : "Cam: Back";
         ChkMirrorH.IsChecked = _settings.MirrorHorizontal;
         ChkFlipV.IsChecked = _settings.FlipVertical;
+
+        ChkMicEnabled.IsChecked = _settings.MicEnabled;
+        ChkMicMuted.IsChecked = _settings.MicMuted;
+        double micPct = Math.Clamp(Math.Round(_settings.MicGain * 100.0), 0, 250);
+        SldMicGain.Value = micPct;
+        TxtMicGainValue.Text = $"{(int)micPct}%";
+        _audioPlayer.Gain = micPct / 100.0;
+        _audioPlayer.Muted = _settings.MicMuted;
+        RefreshAudioDeviceList();
+        UpdateMicButtonUi();
+
         ChkStartWithWindows.IsChecked = StartupManager.IsEnabled();
         ChkMinimizeToTray.IsChecked = _settings.MinimizeToTrayOnClose;
         ChkDebugLog.IsChecked = _settings.DebugLogEnabled;
@@ -216,6 +240,7 @@ public partial class MainWindow : Window
                         useFront: _settings.UseFrontCamera,
                         zoom: _settings.Zoom);
                 }
+                await _server.SetAudioEnabledAsync(_settings.MicEnabled);
             }
         }
         catch (Exception ex)
@@ -240,6 +265,17 @@ public partial class MainWindow : Window
     private void OnCodecConfigReceived(byte[] buffer, int length, long timestampUs)
     {
         _decoder.SetCodecConfig(buffer.AsSpan(0, length));
+    }
+
+    private void OnAudioFrameReceived(byte[] buffer, int length, long timestampUs)
+    {
+        if (!_settings.MicEnabled || length <= WireProtocol.AudioFrameHeaderSize) return;
+        WireProtocol.ReadAudioFrameHeader(buffer.AsSpan(0, WireProtocol.AudioFrameHeaderSize), out int rate, out int ch, out int bits);
+        if (bits != 16) return;
+        _audioPlayer.PushPcm16Mono(
+            buffer.AsSpan(WireProtocol.AudioFrameHeaderSize, length - WireProtocol.AudioFrameHeaderSize),
+            rate,
+            ch);
     }
 
     private void OnVideoFrameReceived(byte[] buffer, int length, long phoneTsUs, bool isKeyframe)
@@ -556,10 +592,183 @@ public partial class MainWindow : Window
         }
 
         _trayIcon.Dispose();
+        _audioLevelTimer.Stop();
+        _audioPlayer.Dispose();
         _virtualCam.Dispose();
         _sharedWriter.Dispose();
         await _discovery.DisposeAsync();
         await _server.DisposeAsync();
         _decoder.Dispose();
+    }
+
+    private void RefreshAudioDeviceList()
+    {
+        _audioDevices = WasapiAudioPlayer.EnumerateRenderDevices();
+        string? virtualMic = WasapiAudioPlayer.DetectVirtualMicCaptureName();
+
+        bool prevReady = _uiReady;
+        _uiReady = false;
+        CmbAudioDevice.Items.Clear();
+
+        AudioDeviceInfo? autoTarget = _audioDevices.FirstOrDefault(d => d.IsVirtualCable);
+        int selectedIndex = -1;
+        for (int i = 0; i < _audioDevices.Count; i++)
+        {
+            var dev = _audioDevices[i];
+            string label = dev.IsVirtualCable ? $"[Virtual Cable] {dev.Name}" : dev.Name;
+            CmbAudioDevice.Items.Add(new ComboBoxItem { Content = label, Tag = dev.Id });
+            if (!string.IsNullOrWhiteSpace(_settings.PreferredAudioDeviceId) &&
+                string.Equals(dev.Id, _settings.PreferredAudioDeviceId, StringComparison.OrdinalIgnoreCase))
+            {
+                selectedIndex = i;
+            }
+        }
+        if (selectedIndex < 0 && autoTarget != null)
+        {
+            selectedIndex = _audioDevices.IndexOf(autoTarget);
+        }
+        if (selectedIndex < 0 && _audioDevices.Count > 0)
+        {
+            selectedIndex = 0;
+        }
+        if (selectedIndex >= 0)
+        {
+            CmbAudioDevice.SelectedIndex = selectedIndex;
+        }
+        _uiReady = prevReady;
+
+        if (virtualMic != null)
+        {
+            TxtVirtualMicStatus.Text = $"Virtual Mic Ready: {virtualMic} (pick this mic in Zoom / Meet / Discord).";
+            TxtVirtualMicStatus.Foreground = new SolidColorBrush(Color.FromRgb(52, 211, 153));
+            BtnInstallVbCable.Visibility = Visibility.Collapsed;
+        }
+        else
+        {
+            TxtVirtualMicStatus.Text =
+                "No Virtual Mic driver (VB-CABLE) found. Install VB-CABLE so apps see 'CABLE Output', or pick an output device below to test audio.";
+            TxtVirtualMicStatus.Foreground = new SolidColorBrush(Color.FromRgb(251, 191, 36));
+            BtnInstallVbCable.Visibility = Visibility.Visible;
+        }
+    }
+
+    private void StartAudioOutput()
+    {
+        if (_audioPlayer.Start(_settings.PreferredAudioDeviceId, out var status))
+        {
+            _audioLevelTimer.Start();
+            _logger.Log($"Audio active: {status}", force: true);
+        }
+        else
+        {
+            _audioLevelTimer.Stop();
+            TxtVirtualMicStatus.Text = status;
+            TxtVirtualMicStatus.Foreground = new SolidColorBrush(Color.FromRgb(248, 113, 113));
+        }
+        UpdateMicButtonUi();
+    }
+
+    private void StopAudioOutput()
+    {
+        _audioPlayer.Stop();
+        _audioLevelTimer.Stop();
+        PrgMicLevel.Value = 0;
+        UpdateMicButtonUi();
+    }
+
+    private async Task SetMicEnabledAsync(bool enabled)
+    {
+        _settings.MicEnabled = enabled;
+        _settings.Save();
+
+        bool prevReady = _uiReady;
+        _uiReady = false;
+        ChkMicEnabled.IsChecked = enabled;
+        _uiReady = prevReady;
+
+        if (enabled)
+        {
+            StartAudioOutput();
+        }
+        else
+        {
+            StopAudioOutput();
+        }
+        await _server.SetAudioEnabledAsync(enabled);
+    }
+
+    private void UpdateMicButtonUi()
+    {
+        if (_settings.MicEnabled && _settings.MicMuted)
+        {
+            BtnMic.Content = "Mic: MUTED";
+            BtnMic.Background = new SolidColorBrush(Color.FromRgb(180, 83, 9));
+        }
+        else if (_settings.MicEnabled)
+        {
+            BtnMic.Content = "Mic: ON";
+            BtnMic.Background = new SolidColorBrush(Color.FromRgb(21, 128, 61));
+        }
+        else
+        {
+            BtnMic.Content = "Mic: OFF";
+            BtnMic.Background = new SolidColorBrush(Color.FromRgb(42, 48, 60));
+        }
+    }
+
+    private async void BtnMic_Click(object sender, RoutedEventArgs e)
+    {
+        await SetMicEnabledAsync(!_settings.MicEnabled);
+    }
+
+    private async void ChkMicEnabled_Changed(object sender, RoutedEventArgs e)
+    {
+        if (!_uiReady) return;
+        await SetMicEnabledAsync(ChkMicEnabled.IsChecked == true);
+    }
+
+    private void ChkMicMuted_Changed(object sender, RoutedEventArgs e)
+    {
+        if (!_uiReady) return;
+        _settings.MicMuted = ChkMicMuted.IsChecked == true;
+        _settings.Save();
+        _audioPlayer.Muted = _settings.MicMuted;
+        UpdateMicButtonUi();
+    }
+
+    private void CmbAudioDevice_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (!_uiReady) return;
+        if (CmbAudioDevice.SelectedItem is ComboBoxItem item && item.Tag is string id)
+        {
+            _settings.PreferredAudioDeviceId = id;
+            _settings.Save();
+            if (_settings.MicEnabled)
+            {
+                StartAudioOutput();
+            }
+        }
+    }
+
+    private void SldMicGain_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+    {
+        if (!_uiReady) return;
+        int pct = (int)SldMicGain.Value;
+        TxtMicGainValue.Text = $"{pct}%";
+        _settings.MicGain = pct / 100.0;
+        _settings.Save();
+        _audioPlayer.Gain = _settings.MicGain;
+    }
+
+    private void BtnInstallVbCable_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            Process.Start(new ProcessStartInfo("https://vb-audio.com/Cable/") { UseShellExecute = true });
+        }
+        catch (Exception ex)
+        {
+            _logger.Log($"Failed to open VB-CABLE URL: {ex.Message}", force: true);
+        }
     }
 }

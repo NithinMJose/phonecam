@@ -17,12 +17,19 @@ object Protocol {
     const val TYPE_VIDEO_FRAME: Byte = 0x01
     const val TYPE_CODEC_CONFIG: Byte = 0x02
     const val TYPE_STREAM_INFO: Byte = 0x03
+    const val TYPE_AUDIO_FRAME: Byte = 0x04
 
     // PC -> Phone
     const val TYPE_REQUEST_KEYFRAME: Byte = 0x10
     const val TYPE_PING: Byte = 0x11
     const val TYPE_PONG: Byte = 0x12
     const val TYPE_SET_CONFIG: Byte = 0x13
+    const val TYPE_AUDIO_CONTROL: Byte = 0x14
+
+    const val AUDIO_SAMPLE_RATE = 48000
+    const val AUDIO_CHANNELS = 1
+    const val AUDIO_BITS_PER_SAMPLE = 16
+    const val AUDIO_FRAME_HEADER_SIZE = 4
 
     const val FLAG_KEYFRAME: Short = 0x0001
     const val FLAG_EOS: Short = 0x0002
@@ -54,6 +61,23 @@ object Protocol {
         val flags = buf.get().toInt() and 0xFF
         val zoomX100 = buf.short.toInt() and 0xFFFF
         return ConfigUpdate(width, height, fps, bitrate, facing, flags, zoomX100)
+    }
+
+    fun readAudioControlPayload(src: ByteArray, length: Int): Boolean? {
+        if (length < 1) return null
+        return (src[0].toInt() and 0xFF) != 0
+    }
+
+    fun writeAudioFrameHeader(
+        dst: ByteArray,
+        sampleRate: Int = AUDIO_SAMPLE_RATE,
+        channels: Int = AUDIO_CHANNELS,
+        bitsPerSample: Int = AUDIO_BITS_PER_SAMPLE
+    ) {
+        dst[0] = ((sampleRate ushr 8) and 0xFF).toByte()
+        dst[1] = (sampleRate and 0xFF).toByte()
+        dst[2] = (channels and 0xFF).toByte()
+        dst[3] = (bitsPerSample and 0xFF).toByte()
     }
 
     fun writeHeader(

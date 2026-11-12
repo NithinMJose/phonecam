@@ -41,6 +41,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var btnModeWifi: Button
     private lateinit var btnDiscover: Button
     private lateinit var chkAutoStart: CheckBox
+    private lateinit var chkMic: CheckBox
     private lateinit var btnSwitchCam: Button
     private lateinit var btnToggle: Button
 
@@ -50,14 +51,39 @@ class MainActivity : AppCompatActivity() {
 
     private var selectedFrontCamera = false
     private var wifiMode = false
+    private var suppressMicCheckEvent = false
 
     private val prefs by lazy { getSharedPreferences("phonecam_prefs", Context.MODE_PRIVATE) }
+
+    private val micPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) {
+            prefs.edit().putBoolean("stream_mic", true).apply()
+            pushAudioStateToService(true)
+        } else {
+            suppressMicCheckEvent = true
+            chkMic.isChecked = false
+            suppressMicCheckEvent = false
+            prefs.edit().putBoolean("stream_mic", false).apply()
+            tvError.visibility = View.VISIBLE
+            tvError.text = "Microphone permission denied; streaming video only."
+        }
+    }
 
     private val permissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { results ->
         val cameraGranted = results[Manifest.permission.CAMERA] == true ||
             hasPermission(Manifest.permission.CAMERA)
+        val audioGranted = results[Manifest.permission.RECORD_AUDIO] == true ||
+            hasPermission(Manifest.permission.RECORD_AUDIO)
+        if (chkMic.isChecked && !audioGranted) {
+            suppressMicCheckEvent = true
+            chkMic.isChecked = false
+            suppressMicCheckEvent = false
+            prefs.edit().putBoolean("stream_mic", false).apply()
+        }
         if (cameraGranted) {
             startStreamingService()
         } else {
@@ -81,6 +107,7 @@ class MainActivity : AppCompatActivity() {
         btnModeWifi = findViewById(R.id.btnModeWifi)
         btnDiscover = findViewById(R.id.btnDiscover)
         chkAutoStart = findViewById(R.id.chkAutoStart)
+        chkMic = findViewById(R.id.chkMic)
         btnSwitchCam = findViewById(R.id.btnSwitchCam)
         btnToggle = findViewById(R.id.btnToggle)
 
@@ -90,6 +117,17 @@ class MainActivity : AppCompatActivity() {
         chkAutoStart.isChecked = prefs.getBoolean("auto_start", false)
         chkAutoStart.setOnCheckedChangeListener { _, isChecked ->
             prefs.edit().putBoolean("auto_start", isChecked).apply()
+        }
+
+        chkMic.isChecked = prefs.getBoolean("stream_mic", true)
+        chkMic.setOnCheckedChangeListener { _, isChecked ->
+            if (suppressMicCheckEvent) return@setOnCheckedChangeListener
+            if (isChecked && !hasPermission(Manifest.permission.RECORD_AUDIO)) {
+                micPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                return@setOnCheckedChangeListener
+            }
+            prefs.edit().putBoolean("stream_mic", isChecked).apply()
+            pushAudioStateToService(isChecked)
         }
 
         if (chkAutoStart.isChecked &&
@@ -234,6 +272,11 @@ class MainActivity : AppCompatActivity() {
                 if (st.isRunning) {
                     selectedFrontCamera = st.useFrontCamera
                     btnSwitchCam.text = if (st.useFrontCamera) "Camera: Front" else "Camera: Back"
+                    if (chkMic.isChecked != st.audioEnabled) {
+                        suppressMicCheckEvent = true
+                        chkMic.isChecked = st.audioEnabled
+                        suppressMicCheckEvent = false
+                    }
                 }
                 btnToggle.text = if (st.isRunning) "Stop Streaming" else "Start Streaming"
                 btnModeUsb.isEnabled = !st.isRunning
@@ -256,6 +299,9 @@ class MainActivity : AppCompatActivity() {
         if (!hasPermission(Manifest.permission.CAMERA)) {
             needed.add(Manifest.permission.CAMERA)
         }
+        if (chkMic.isChecked && !hasPermission(Manifest.permission.RECORD_AUDIO)) {
+            needed.add(Manifest.permission.RECORD_AUDIO)
+        }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
             !hasPermission(Manifest.permission.POST_NOTIFICATIONS)
         ) {
@@ -267,6 +313,15 @@ class MainActivity : AppCompatActivity() {
         } else {
             permissionLauncher.launch(needed.toTypedArray())
         }
+    }
+
+    private fun pushAudioStateToService(enabled: Boolean) {
+        if (!CameraStreamService.state.value.isRunning) return
+        val intent = Intent(this, CameraStreamService::class.java).apply {
+            action = CameraStreamService.ACTION_SET_AUDIO
+            putExtra(CameraStreamService.EXTRA_ENABLE_AUDIO, enabled)
+        }
+        startService(intent)
     }
 
     private fun hasPermission(perm: String): Boolean =
@@ -291,6 +346,10 @@ class MainActivity : AppCompatActivity() {
             putExtra(CameraStreamService.EXTRA_HOST, host)
             putExtra(CameraStreamService.EXTRA_PORT, port)
             putExtra(CameraStreamService.EXTRA_USE_FRONT, selectedFrontCamera)
+            putExtra(
+                CameraStreamService.EXTRA_ENABLE_AUDIO,
+                chkMic.isChecked && hasPermission(Manifest.permission.RECORD_AUDIO)
+            )
         }
         ContextCompat.startForegroundService(this, intent)
     }

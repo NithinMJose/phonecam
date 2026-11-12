@@ -1,7 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="#111318"
+    android:fillViewport="true">
+
+<LinearLayout
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
     android:background="#111318"
     android:orientation="vertical"
     android:padding="24dp">
@@ -18,7 +24,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="4dp"
-        android:text="USB + WiFi H.264 Streamer (Phase 2)"
+        android:text="USB + WiFi Camera &amp; Microphone"
         android:textColor="#9CA3AF"
         android:textSize="14sp" />
 
@@ -168,6 +174,16 @@
         android:textColor="#D1D5DB"
         android:textSize="13sp" />
 
+    <CheckBox
+        android:id="@+id/chkMic"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:buttonTint="#60A5FA"
+        android:text="Stream Phone Microphone (48 kHz)"
+        android:textColor="#D1D5DB"
+        android:textSize="13sp" />
+
     <Button
         android:id="@+id/btnSwitchCam"
         android:layout_width="match_parent"
@@ -200,3 +216,4 @@
         android:textSize="12sp" />
 
 </LinearLayout>
+</ScrollView>

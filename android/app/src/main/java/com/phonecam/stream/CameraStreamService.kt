@@ -1,5 +1,6 @@
 package com.phonecam.stream
 
+import android.Manifest
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -7,6 +8,7 @@ import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.content.pm.ServiceInfo
 import android.os.Handler
 import android.os.IBinder
@@ -16,7 +18,9 @@ import android.os.SystemClock
 import android.util.Log
 import android.view.OrientationEventListener
 import androidx.core.app.NotificationCompat
+import androidx.core.content.ContextCompat
 import com.phonecam.MainActivity
+import com.phonecam.audio.AudioStreamer
 import com.phonecam.camera.Camera2Controller
 import com.phonecam.camera.VideoEncoder
 import com.phonecam.net.TcpStreamClient
@@ -27,6 +31,7 @@ data class StreamStatus(
     val isRunning: Boolean = false,
     val isConnected: Boolean = false,
     val useFrontCamera: Boolean = false,
+    val audioEnabled: Boolean = false,
     val statusText: String = "Idle",
     val width: Int = 1280,
     val height: Int = 720,
@@ -45,9 +50,11 @@ class CameraStreamService : Service() {
         const val ACTION_START = "com.phonecam.action.START"
         const val ACTION_STOP = "com.phonecam.action.STOP"
         const val ACTION_SWITCH_CAMERA = "com.phonecam.action.SWITCH_CAMERA"
+        const val ACTION_SET_AUDIO = "com.phonecam.action.SET_AUDIO"
         const val EXTRA_HOST = "host"
         const val EXTRA_PORT = "port"
         const val EXTRA_USE_FRONT = "use_front"
+        const val EXTRA_ENABLE_AUDIO = "enable_audio"
 
         private const val CHANNEL_ID = "phonecam_stream"
         private const val NOTIFICATION_ID = 1001
@@ -59,11 +66,13 @@ class CameraStreamService : Service() {
     private var wakeLock: PowerManager.WakeLock? = null
     private var encoder: VideoEncoder? = null
     private var cameraController: Camera2Controller? = null
+    private var audioStreamer: AudioStreamer? = null
     private var tcpClient: TcpStreamClient? = null
 
     private var currentHost = "127.0.0.1"
     private var currentPort = Protocol.DEFAULT_PORT
     private var useFrontCamera = false
+    private var audioEnabled = false
     private var targetWidth = 1280
     private var targetHeight = 720
     private var targetFps = 30
@@ -94,8 +103,13 @@ class CameraStreamService : Service() {
                 currentHost = intent.getStringExtra(EXTRA_HOST)?.ifBlank { "127.0.0.1" } ?: "127.0.0.1"
                 currentPort = intent.getIntExtra(EXTRA_PORT, Protocol.DEFAULT_PORT)
                 useFrontCamera = intent.getBooleanExtra(EXTRA_USE_FRONT, state.value.useFrontCamera)
+                audioEnabled = intent.getBooleanExtra(EXTRA_ENABLE_AUDIO, audioEnabled)
                 startForegroundNotification("Starting stream to $currentHost:$currentPort...")
                 startPipeline(currentHost, currentPort)
+            }
+            ACTION_SET_AUDIO -> {
+                val wantAudio = intent.getBooleanExtra(EXTRA_ENABLE_AUDIO, audioEnabled)
+                setAudioEnabled(wantAudio)
             }
             ACTION_SWITCH_CAMERA -> {
                 val wantFront = intent.getBooleanExtra(EXTRA_USE_FRONT, !useFrontCamera)
@@ -123,10 +137,17 @@ class CameraStreamService : Service() {
         )
         nm.createNotificationChannel(channel)
 
+        var fgsType = ServiceInfo.FOREGROUND_SERVICE_TYPE_CAMERA
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) ==
+            PackageManager.PERMISSION_GRANTED
+        ) {
+            fgsType = fgsType or ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE
+        }
+
         startForeground(
             NOTIFICATION_ID,
             buildNotification(contentText),
-            ServiceInfo.FOREGROUND_SERVICE_TYPE_CAMERA
+            fgsType
         )
     }
 
@@ -164,6 +185,7 @@ class CameraStreamService : Service() {
             isRunning = true,
             isConnected = false,
             useFrontCamera = useFrontCamera,
+            audioEnabled = audioEnabled,
             statusText = "Connecting to $host:$port...",
             width = targetWidth,
             height = targetHeight,
@@ -230,6 +252,7 @@ class CameraStreamService : Service() {
                         isRunning = true,
                         isConnected = true,
                         useFrontCamera = useFrontCamera,
+                        audioEnabled = audioEnabled,
                         statusText = "Streaming $camLabel ($host:$port)",
                         width = currentWidth,
                         height = currentHeight,
@@ -238,12 +261,18 @@ class CameraStreamService : Service() {
                         zoom = currentZoom,
                         errorText = null
                     )
+                    if (audioEnabled) {
+                        startAudioCaptureIfPermitted()
+                    }
                 },
                 onRequestKeyframe = {
                     encoder?.requestSyncFrame()
                 },
                 onSetConfig = { cfg ->
                     mainHandler.post { handleRemoteConfig(cfg) }
+                },
+                onAudioControl = { enableAudio ->
+                    mainHandler.post { setAudioEnabled(enableAudio) }
                 },
                 onStatsUpdate = { pkts, bytes, dropped ->
                     val now = SystemClock.elapsedRealtime()
@@ -260,6 +289,7 @@ class CameraStreamService : Service() {
                 },
                 onReconnecting = { reason, delayMs ->
                     Log.w("PhoneCam", "Link lost ($reason); retrying in ${delayMs}ms")
+                    mainHandler.post { stopAudioCapture() }
                     val msg = "Reconnecting in ${delayMs / 1000}s ($reason)"
                     updateNotification(msg)
                     state.value = state.value.copy(
@@ -435,6 +465,54 @@ class CameraStreamService : Service() {
         }
     }
 
+    private fun setAudioEnabled(enabled: Boolean) {
+        audioEnabled = enabled
+        state.value = state.value.copy(audioEnabled = enabled)
+        if (!state.value.isRunning) return
+        if (enabled && state.value.isConnected) {
+            startAudioCaptureIfPermitted()
+        } else {
+            stopAudioCapture()
+        }
+    }
+
+    private fun startAudioCaptureIfPermitted() {
+        val client = tcpClient ?: return
+        if (audioStreamer != null) return
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) !=
+            PackageManager.PERMISSION_GRANTED
+        ) {
+            Log.w("PhoneCam", "RECORD_AUDIO permission not granted; mic disabled")
+            audioEnabled = false
+            state.value = state.value.copy(
+                audioEnabled = false,
+                errorText = "Grant Microphone permission in PhoneCam app to stream phone mic."
+            )
+            return
+        }
+
+        val streamer = AudioStreamer(
+            onAudioPacket = { data, len, tsUs ->
+                client.enqueueAudioPacket(data, len, tsUs)
+            },
+            onError = { errMsg ->
+                mainHandler.post {
+                    Log.e("PhoneCam", errMsg)
+                    stopAudioCapture()
+                    audioEnabled = false
+                    state.value = state.value.copy(audioEnabled = false, errorText = errMsg)
+                }
+            }
+        )
+        audioStreamer = streamer
+        streamer.start()
+    }
+
+    private fun stopAudioCapture() {
+        audioStreamer?.stop()
+        audioStreamer = null
+    }
+
     private fun startOrientationListener() {
         orientationListener?.disable()
         orientationListener = object : OrientationEventListener(this) {
@@ -474,6 +552,7 @@ class CameraStreamService : Service() {
         Log.i("PhoneCam", "stopPipeline error=$error")
         orientationListener?.disable()
         orientationListener = null
+        stopAudioCapture()
         cameraController?.stop()
         cameraController = null
         encoder?.stop()

@@ -29,6 +29,7 @@ class TcpStreamClient(
     private val onConnected: () -> Unit,
     private val onRequestKeyframe: () -> Unit,
     private val onSetConfig: (Protocol.ConfigUpdate) -> Unit,
+    private val onAudioControl: (Boolean) -> Unit = {},
     private val onStatsUpdate: (packetsSent: Long, bytesSent: Long, dropped: Long) -> Unit,
     private val onReconnecting: (reason: String, delayMs: Long) -> Unit,
     private val onStopped: (String?) -> Unit
@@ -47,6 +48,12 @@ class TcpStreamClient(
             src.get(data, 0, size)
             length = size
         }
+    }
+
+    private class AudioSlot(capacity: Int = 2048) {
+        var data = ByteArray(capacity)
+        var length = 0
+        var timestampUs = 0L
     }
 
     private data class PongReply(val pcSendTsUs: Long, val phoneRxTsUs: Long)
@@ -68,6 +75,10 @@ class TcpStreamClient(
         repeat(4) { addLast(FrameSlot()) }
     }
     private val sendQueue = ArrayDeque<FrameSlot>(4)
+    private val audioFreePool = ArrayDeque<AudioSlot>(16).apply {
+        repeat(16) { addLast(AudioSlot()) }
+    }
+    private val audioQueue = ArrayDeque<AudioSlot>(16)
     private val pongQueue = ArrayDeque<PongReply>(4)
     private val pendingStreamInfo = ArrayDeque<StreamInfoData>(2)
 
@@ -107,6 +118,23 @@ class TcpStreamClient(
         if (!connected.get()) return
         lock.withLock {
             pendingStreamInfo.addLast(info)
+            hasWork.signal()
+        }
+    }
+
+    fun enqueueAudioPacket(packet: ByteArray, length: Int, timestampUs: Long) {
+        if (!running.get() || !connected.get()) return
+        lock.withLock {
+            while (audioQueue.size >= 15) {
+                val droppedAudio = audioQueue.removeFirst()
+                if (audioFreePool.size < 20) audioFreePool.addLast(droppedAudio)
+            }
+            val slot = audioFreePool.pollFirst() ?: AudioSlot(length)
+            if (length > slot.data.size) slot.data = ByteArray(length)
+            System.arraycopy(packet, 0, slot.data, 0, length)
+            slot.length = length
+            slot.timestampUs = timestampUs
+            audioQueue.addLast(slot)
             hasWork.signal()
         }
     }
@@ -213,6 +241,7 @@ class TcpStreamClient(
 
                 lock.withLock {
                     while (sendQueue.isNotEmpty()) freePool.addLast(sendQueue.removeFirst())
+                    while (audioQueue.isNotEmpty()) audioFreePool.addLast(audioQueue.removeFirst())
                     pongQueue.clear()
                     pendingStreamInfo.clear()
                     waitingForKeyframe.set(true)
@@ -260,11 +289,13 @@ class TcpStreamClient(
                 while (running.get() && disconnectReason == null) {
                     var pong: PongReply? = null
                     var streamInfo: StreamInfoData? = null
+                    var audioSlot: AudioSlot? = null
                     var slot: FrameSlot? = null
 
                     lock.withLock {
                         while (running.get() && disconnectReason == null &&
-                            pongQueue.isEmpty() && pendingStreamInfo.isEmpty() && sendQueue.isEmpty()
+                            pongQueue.isEmpty() && pendingStreamInfo.isEmpty() &&
+                            audioQueue.isEmpty() && sendQueue.isEmpty()
                         ) {
                             hasWork.await()
                         }
@@ -274,6 +305,9 @@ class TcpStreamClient(
                             streamInfo = pendingStreamInfo.pollFirst()
                         }
                         if (pong == null && streamInfo == null) {
+                            audioSlot = audioQueue.pollFirst()
+                        }
+                        if (pong == null && streamInfo == null && audioSlot == null) {
                             slot = sendQueue.pollFirst()
                         }
                     }
@@ -299,6 +333,25 @@ class TcpStreamClient(
                             SystemClock.elapsedRealtimeNanos() / 1000L, infoBuf.array(), 16
                         )
                         out.flush()
+                        continue
+                    }
+
+                    if (audioSlot != null) {
+                        val curAudio = audioSlot!!
+                        try {
+                            writePacket(
+                                out, headerBuf, Protocol.TYPE_AUDIO_FRAME, 0,
+                                curAudio.timestampUs, curAudio.data, curAudio.length
+                            )
+                            out.flush()
+                            bytesSent.addAndGet((Protocol.HEADER_SIZE + curAudio.length).toLong())
+                        } finally {
+                            lock.withLock {
+                                if (audioFreePool.size < 20) {
+                                    audioFreePool.addLast(curAudio)
+                                }
+                            }
+                        }
                         continue
                     }
 
@@ -340,6 +393,7 @@ class TcpStreamClient(
                 readerThread = null
                 lock.withLock {
                     while (sendQueue.isNotEmpty()) freePool.addLast(sendQueue.removeFirst())
+                    while (audioQueue.isNotEmpty()) audioFreePool.addLast(audioQueue.removeFirst())
                     pongQueue.clear()
                     pendingStreamInfo.clear()
                 }
@@ -425,6 +479,11 @@ class TcpStreamClient(
                             onSetConfig(cfg)
                         }
                     }
+                    Protocol.TYPE_AUDIO_CONTROL -> {
+                        Protocol.readAudioControlPayload(rxPayload, payloadLen)?.let { enabled ->
+                            onAudioControl(enabled)
+                        }
+                    }
                 }
             }
             "Stopped"
@@ -468,6 +527,9 @@ class TcpStreamClient(
             hasWork.signalAll()
             while (sendQueue.isNotEmpty()) {
                 freePool.addLast(sendQueue.removeFirst())
+            }
+            while (audioQueue.isNotEmpty()) {
+                audioFreePool.addLast(audioQueue.removeFirst())
             }
             pongQueue.clear()
             pendingStreamInfo.clear()

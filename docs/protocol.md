@@ -66,6 +66,7 @@ Every message on the wire consists of a fixed **24-byte header** followed by `pa
 | `0x01`  | `VIDEO_FRAME`  | Raw H.264 Annex-B NAL unit(s) | Encoded video access unit. `timestamp_us` is encoder/capture PTS (`elapsedRealtimeNanos / 1000`). |
 | `0x02`  | `CODEC_CONFIG` | Raw H.264 Annex-B SPS + PPS | Emitted at encoder start and cached so it can be re-sent immediately on keyframe request or reconnect. |
 | `0x03`  | `STREAM_INFO`  | 16-byte fixed struct (see below) | Sent immediately after connection (and whenever format changes) so the PC knows video dimensions before decoding. |
+| `0x04`  | `AUDIO_FRAME`  | 4-byte audio header + raw LE PCM16 samples | Phone microphone PCM chunk: `sample_rate` (`uint16` BE), `channels` (`uint8`), `bits_per_sample` (`uint8`), followed by raw little-endian 16-bit signed PCM frames. |
 
 #### `STREAM_INFO` (`0x03`) Payload (16 bytes, Big-Endian)
 
@@ -86,6 +87,7 @@ Every message on the wire consists of a fixed **24-byte header** followed by `pa
 | `0x11`  | `PING`             | Empty (0 bytes) | `header.timestamp_us` holds PC monotonic send time (µs). Phone must reply promptly with `PONG`. |
 | `0x12`  | `PONG`             | 8-byte `int64` (`phone_rx_ts_us`) | Phone echoes PC's `timestamp_us` in `header.timestamp_us` and puts its own monotonic clock (`elapsedRealtimeNanos / 1000`) in the 8-byte payload. Allows PC to compute both **RTT** and **clock offset** for end-to-end latency estimation. |
 | `0x13`  | `SET_CONFIG`       | 16-byte fixed struct (see below) | Dynamic camera facing, resolution, fps, bitrate, and zoom commands. |
+| `0x14`  | `AUDIO_CONTROL`    | 4-byte fixed struct | Byte 0: `enabled` (`1` = stream phone microphone, `0` = stop microphone); bytes 1..3 reserved (`0`). |
 
 #### `SET_CONFIG` (`0x13`) Payload (16 bytes, Big-Endian)
 

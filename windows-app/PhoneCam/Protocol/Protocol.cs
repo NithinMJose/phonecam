@@ -17,12 +17,16 @@ public static class WireProtocol
     public const byte TypeVideoFrame = 0x01;
     public const byte TypeCodecConfig = 0x02;
     public const byte TypeStreamInfo = 0x03;
+    public const byte TypeAudioFrame = 0x04;
 
     // PC -> Phone
     public const byte TypeRequestKeyframe = 0x10;
     public const byte TypePing = 0x11;
     public const byte TypePong = 0x12;
     public const byte TypeSetConfig = 0x13;
+    public const byte TypeAudioControl = 0x14;
+
+    public const int AudioFrameHeaderSize = 4;
 
     public const byte CameraFacingBack = 0;
     public const byte CameraFacingFront = 1;
@@ -88,6 +92,21 @@ public static class WireProtocol
             RotationQuarters: payload[11],
             Bitrate: BinaryPrimitives.ReadUInt32BigEndian(payload[12..16])
         );
+
+    public static void ReadAudioFrameHeader(ReadOnlySpan<byte> payload, out int sampleRate, out int channels, out int bitsPerSample)
+    {
+        sampleRate = BinaryPrimitives.ReadUInt16BigEndian(payload[0..2]);
+        channels = payload[2];
+        bitsPerSample = payload[3];
+    }
+
+    public static void WriteAudioControl(Span<byte> dst, bool enabled)
+    {
+        dst[0] = enabled ? (byte)1 : (byte)0;
+        dst[1] = 0;
+        dst[2] = 0;
+        dst[3] = 0;
+    }
 
     public static void WriteSetConfig(
         Span<byte> dst,

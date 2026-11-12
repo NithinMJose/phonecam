@@ -22,6 +22,10 @@ public sealed class AppSettings
     public int ManualRotationOffsetQuarters { get; set; }
     public bool MinimizeToTrayOnClose { get; set; } = true;
     public bool DebugLogEnabled { get; set; }
+    public bool MicEnabled { get; set; }
+    public bool MicMuted { get; set; }
+    public string PreferredAudioDeviceId { get; set; } = "";
+    public double MicGain { get; set; } = 1.0;
 
     public static AppSettings Load()
     {

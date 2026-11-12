@@ -33,6 +33,7 @@ public sealed class TcpStreamServer : IAsyncDisposable
     public event Action<WireProtocol.StreamInfo>? StreamInfoReceived;
     public event Action<byte[], int, long>? CodecConfigReceived;
     public event Action<byte[], int, long, bool>? VideoFrameReceived;
+    public event Action<byte[], int, long>? AudioFrameReceived;
     public event Action<double>? RttUpdated;
 
     public TcpStreamServer(DebugLogger logger)
@@ -187,6 +188,10 @@ public sealed class TcpStreamServer : IAsyncDisposable
                         VideoFrameReceived?.Invoke(payloadBuf, len, hdr.TimestampUs, isKeyframe);
                         break;
 
+                    case WireProtocol.TypeAudioFrame when len > WireProtocol.AudioFrameHeaderSize:
+                        AudioFrameReceived?.Invoke(payloadBuf, len, hdr.TimestampUs);
+                        break;
+
                     case WireProtocol.TypePong when len >= 8:
                         HandlePong(hdr.TimestampUs, BinaryPrimitives.ReadInt64BigEndian(payloadBuf.AsSpan(0, 8)));
                         break;
@@ -282,6 +287,13 @@ public sealed class TcpStreamServer : IAsyncDisposable
 
     public Task RequestKeyframeAsync(CancellationToken ct = default) =>
         SendControlAsync(WireProtocol.TypeRequestKeyframe, 0, GetPcMonotonicUs(), ReadOnlyMemory<byte>.Empty, ct);
+
+    public Task SetAudioEnabledAsync(bool enabled, CancellationToken ct = default)
+    {
+        var payload = new byte[4];
+        WireProtocol.WriteAudioControl(payload, enabled);
+        return SendControlAsync(WireProtocol.TypeAudioControl, 0, GetPcMonotonicUs(), payload, ct);
+    }
 
     public Task SetCameraFacingAsync(bool useFront, CancellationToken ct = default)
     {

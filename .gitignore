@@ -7,6 +7,9 @@ android/.idea/
 *.apk
 *.ap_
 *.aab
+*.jks
+*.keystore
+android/keystore.properties
 
 # Windows / .NET
 windows-app/**/bin/
