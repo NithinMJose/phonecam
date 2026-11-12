@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Rounded phone silhouette inside adaptive 108dp safe zone -->
+    <path
+        android:fillColor="#121A2A"
+        android:strokeColor="#3B82F6"
+        android:strokeWidth="2.8"
+        android:pathData="M37,24 L71,24 A7,7 0 0,1 78,31 L78,77 A7,7 0 0,1 71,84 L37,84 A7,7 0 0,1 30,77 L30,31 A7,7 0 0,1 37,24 Z" />
+
+    <!-- Subtle phone bottom bar accent -->
+    <path
+        android:strokeColor="#334155"
+        android:strokeWidth="2.2"
+        android:strokeLineCap="round"
+        android:pathData="M47,78 L61,78" />
+
+    <!-- Outer camera lens ring -->
+    <path
+        android:fillColor="#2563EB"
+        android:pathData="M54,37.5 A16.5,16.5 0 1,0 54,70.5 A16.5,16.5 0 1,0 54,37.5 Z" />
+
+    <!-- Inner bright lens bevel -->
+    <path
+        android:fillColor="#60A5FA"
+        android:pathData="M54,40 A14,14 0 1,0 54,68 A14,14 0 1,0 54,40 Z" />
+
+    <!-- Deep sapphire iris -->
+    <path
+        android:fillColor="#0B101C"
+        android:pathData="M54,44 A10,10 0 1,0 54,64 A10,10 0 1,0 54,44 Z" />
+
+    <!-- Specular lens reflection -->
+    <path
+        android:fillColor="#93C5FD"
+        android:pathData="M50,47 A3.3,3.3 0 1,0 50,53.6 A3.3,3.3 0 1,0 50,47 Z" />
+
+    <!-- Live emerald recording dot -->
+    <path
+        android:fillColor="#34D399"
+        android:pathData="M70,29 A3.5,3.5 0 1,0 70,36 A3.5,3.5 0 1,0 70,29 Z" />
+</vector>
+

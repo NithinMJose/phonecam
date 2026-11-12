@@ -1,7 +1,7 @@
 [Setup]
 AppId={{7B5E9A41-2C3D-4F88-9A1E-4D5F6A7B8C9D}
 AppName=PhoneCam
-AppVersion=1.2.0
+AppVersion=1.2.1
 AppPublisher=NithinMJose
 DefaultDirName={autopf}\PhoneCam
 DefaultGroupName=PhoneCam
@@ -14,6 +14,8 @@ Compression=lzma2/normal
 SolidCompression=yes
 WizardStyle=modern
 CloseApplications=yes
+SetupIconFile=..\windows-app\PhoneCam\Assets\PhoneCam.ico
+UninstallDisplayIcon={app}\PhoneCam.exe
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"

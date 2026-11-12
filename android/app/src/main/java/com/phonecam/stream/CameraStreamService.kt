@@ -20,6 +20,7 @@ import android.view.OrientationEventListener
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import com.phonecam.MainActivity
+import com.phonecam.R
 import com.phonecam.audio.AudioStreamer
 import com.phonecam.camera.Camera2Controller
 import com.phonecam.camera.VideoEncoder
@@ -172,7 +173,7 @@ class CameraStreamService : Service() {
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("PhoneCam Active")
             .setContentText(contentText)
-            .setSmallIcon(android.R.drawable.presence_video_online)
+            .setSmallIcon(R.drawable.ic_stat_phonecam)
             .setOngoing(true)
             .setContentIntent(openIntent)
             .addAction(android.R.drawable.ic_media_pause, "Stop", stopIntent)

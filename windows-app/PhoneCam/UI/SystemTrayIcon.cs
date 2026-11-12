@@ -55,6 +55,21 @@ public sealed class SystemTrayIcon : IDisposable
 
     private static Drawing.Icon CreateCameraIcon()
     {
+        try
+        {
+            var info = System.Windows.Application.GetResourceStream(new Uri("pack://application:,,,/Assets/PhoneCam.ico"));
+            if (info?.Stream != null)
+            {
+                using (info.Stream)
+                {
+                    return new Drawing.Icon(info.Stream, new Drawing.Size(32, 32));
+                }
+            }
+        }
+        catch
+        {
+        }
+
         using var bmp = new Drawing.Bitmap(32, 32);
         using (var g = Drawing.Graphics.FromImage(bmp))
         {
