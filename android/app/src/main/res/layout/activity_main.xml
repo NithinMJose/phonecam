@@ -11,9 +11,9 @@
     android:layout_height="wrap_content"
     android:background="#0C0F14"
     android:orientation="vertical"
-    android:padding="20dp">
+    android:padding="22dp">
 
-    <!-- Header Row -->
+    <!-- Clean Minimal Header -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -21,8 +21,8 @@
         android:orientation="horizontal">
 
         <ImageView
-            android:layout_width="44dp"
-            android:layout_height="44dp"
+            android:layout_width="42dp"
+            android:layout_height="42dp"
             android:layout_marginEnd="12dp"
             android:contentDescription="PhoneCam icon"
             android:src="@mipmap/ic_launcher" />
@@ -38,40 +38,44 @@
                 android:layout_height="wrap_content"
                 android:text="PhoneCam"
                 android:textColor="#F3F4F6"
-                android:textSize="28sp"
+                android:textSize="26sp"
                 android:textStyle="bold" />
 
             <TextView
+                android:id="@+id/tvSubtitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="2dp"
-                android:text="Low-latency USB &amp; WiFi Camera + Mic"
+                android:text="Phone webcam &amp; mic"
                 android:textColor="#9CA3AF"
                 android:textSize="13sp" />
         </LinearLayout>
 
-        <TextView
+        <Button
+            android:id="@+id/btnAdvancedToggle"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_height="34dp"
             android:background="@drawable/bg_badge_pill"
+            android:minWidth="0dp"
             android:paddingStart="12dp"
-            android:paddingTop="5dp"
+            android:paddingTop="0dp"
             android:paddingEnd="12dp"
-            android:paddingBottom="5dp"
-            android:text="v1.2"
-            android:textColor="#60A5FA"
+            android:paddingBottom="0dp"
+            android:stateListAnimator="@null"
+            android:text="Advanced ▾"
+            android:textAllCaps="false"
+            android:textColor="#93C5FD"
             android:textSize="12sp"
             android:textStyle="bold" />
     </LinearLayout>
 
-    <!-- Status Card -->
+    <!-- Primary Connection Status Card -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="18dp"
+        android:layout_marginTop="20dp"
         android:background="@drawable/bg_card"
         android:orientation="vertical"
-        android:padding="16dp">
+        android:padding="18dp">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -81,8 +85,8 @@
 
             <View
                 android:id="@+id/viewStatusDot"
-                android:layout_width="10dp"
-                android:layout_height="10dp"
+                android:layout_width="11dp"
+                android:layout_height="11dp"
                 android:layout_marginEnd="10dp"
                 android:background="@drawable/bg_dot_status" />
 
@@ -91,23 +95,20 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="Idle"
+                android:text="Ready"
                 android:textColor="#F3F4F6"
-                android:textSize="17sp"
+                android:textSize="18sp"
                 android:textStyle="bold" />
         </LinearLayout>
 
         <TextView
-            android:id="@+id/tvStats"
+            android:id="@+id/tvConnectedPc"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:background="@drawable/bg_inner_pill"
-            android:fontFamily="monospace"
-            android:padding="12dp"
-            android:text="1280x720 @ 30 fps | 0.00 Mbps\nSent: 0 | Dropped: 0"
-            android:textColor="#D1D5DB"
-            android:textSize="12.5sp" />
+            android:layout_marginTop="8dp"
+            android:text="Mode: USB Cable — plug into PC and tap Start Camera"
+            android:textColor="#9CA3AF"
+            android:textSize="13.5sp" />
 
         <TextView
             android:id="@+id/tvError"
@@ -117,11 +118,11 @@
             android:background="@drawable/bg_inner_pill"
             android:padding="10dp"
             android:textColor="#FCA5A5"
-            android:textSize="12sp"
+            android:textSize="12.5sp"
             android:visibility="gone" />
     </LinearLayout>
 
-    <!-- Connection Card -->
+    <!-- Simple Transport Switch Card -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -133,12 +134,11 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="CONNECTION"
-            android:textColor="#60A5FA"
-            android:textSize="11sp"
+            android:text="Connect via"
+            android:textColor="#9CA3AF"
+            android:textSize="12.5sp"
             android:textStyle="bold" />
 
-        <!-- Segmented Transport Switch -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -150,22 +150,22 @@
             <Button
                 android:id="@+id/btnModeUsb"
                 android:layout_width="0dp"
-                android:layout_height="40dp"
+                android:layout_height="44dp"
                 android:layout_marginEnd="4dp"
                 android:layout_weight="1"
                 android:background="@drawable/bg_button_pill"
                 android:backgroundTint="#2563EB"
                 android:stateListAnimator="@null"
-                android:text="USB (adb)"
+                android:text="USB Cable"
                 android:textAllCaps="false"
                 android:textColor="#FFFFFF"
-                android:textSize="13.5sp"
+                android:textSize="14sp"
                 android:textStyle="bold" />
 
             <Button
                 android:id="@+id/btnModeWifi"
                 android:layout_width="0dp"
-                android:layout_height="40dp"
+                android:layout_height="44dp"
                 android:layout_marginStart="4dp"
                 android:layout_weight="1"
                 android:background="@drawable/bg_button_pill"
@@ -173,72 +173,95 @@
                 android:stateListAnimator="@null"
                 android:text="WiFi / Hotspot"
                 android:textAllCaps="false"
-                android:textColor="#D1D5DB"
-                android:textSize="13.5sp"
+                android:textColor="#9CA3AF"
+                android:textSize="14sp"
                 android:textStyle="bold" />
         </LinearLayout>
 
-        <TextView
-            android:id="@+id/tvHostLabel"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="14dp"
-            android:text="Target Host (127.0.0.1 for USB adb reverse)"
-            android:textColor="#9CA3AF"
-            android:textSize="12sp" />
-
-        <LinearLayout
+        <Button
+            android:id="@+id/btnDiscover"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="6dp"
-            android:gravity="center_vertical"
-            android:orientation="horizontal">
-
-            <EditText
-                android:id="@+id/etHost"
-                android:layout_width="0dp"
-                android:layout_height="46dp"
-                android:layout_weight="1"
-                android:background="@drawable/bg_input"
-                android:hint="127.0.0.1"
-                android:inputType="textUri"
-                android:paddingStart="14dp"
-                android:paddingEnd="14dp"
-                android:text="127.0.0.1"
-                android:textColor="#F3F4F6"
-                android:textColorHint="#6B7280"
-                android:textSize="14sp" />
-
-            <Button
-                android:id="@+id/btnDiscover"
-                android:layout_width="wrap_content"
-                android:layout_height="46dp"
-                android:layout_marginStart="8dp"
-                android:background="@drawable/bg_button_pill"
-                android:backgroundTint="#232B3A"
-                android:paddingStart="16dp"
-                android:paddingEnd="16dp"
-                android:stateListAnimator="@null"
-                android:text="Scan PC"
-                android:textAllCaps="false"
-                android:textColor="#F3F4F6"
-                android:textSize="13.5sp"
-                android:visibility="gone" />
-        </LinearLayout>
+            android:layout_height="46dp"
+            android:layout_marginTop="12dp"
+            android:background="@drawable/bg_button_pill"
+            android:backgroundTint="#232B3A"
+            android:stateListAnimator="@null"
+            android:text="Find My PC"
+            android:textAllCaps="false"
+            android:textColor="#F3F4F6"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:visibility="gone" />
 
         <TextView
             android:id="@+id/tvDiscoveryHint"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="6dp"
+            android:layout_marginTop="8dp"
             android:textColor="#9CA3AF"
-            android:textSize="12sp"
+            android:textSize="12.5sp"
             android:visibility="gone" />
+    </LinearLayout>
+
+    <!-- Collapsible Advanced & Details Section (hidden for simplicity by default) -->
+    <LinearLayout
+        android:id="@+id/layoutAdvanced"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="14dp"
+        android:background="@drawable/bg_card"
+        android:orientation="vertical"
+        android:padding="16dp"
+        android:visibility="gone">
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:text="ADVANCED &amp; DETAILS"
+            android:textColor="#60A5FA"
+            android:textSize="11sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tvStats"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:background="@drawable/bg_inner_pill"
+            android:fontFamily="monospace"
+            android:padding="12dp"
+            android:text="1280x720 @ 30 fps | 0.00 Mbps\nSent: 0 | Dropped: 0"
+            android:textColor="#D1D5DB"
+            android:textSize="12sp" />
+
+        <TextView
+            android:id="@+id/tvHostLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
+            android:text="PC IP / Host"
+            android:textColor="#9CA3AF"
+            android:textSize="12sp" />
+
+        <EditText
+            android:id="@+id/etHost"
+            android:layout_width="match_parent"
+            android:layout_height="44dp"
+            android:layout_marginTop="6dp"
+            android:background="@drawable/bg_input"
+            android:hint="127.0.0.1"
+            android:inputType="textUri"
+            android:paddingStart="14dp"
+            android:paddingEnd="14dp"
+            android:text="127.0.0.1"
+            android:textColor="#F3F4F6"
+            android:textColorHint="#6B7280"
+            android:textSize="13.5sp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
             android:text="Port"
             android:textColor="#9CA3AF"
             android:textSize="12sp" />
@@ -246,7 +269,7 @@
         <EditText
             android:id="@+id/etPort"
             android:layout_width="match_parent"
-            android:layout_height="46dp"
+            android:layout_height="44dp"
             android:layout_marginTop="6dp"
             android:background="@drawable/bg_input"
             android:hint="18420"
@@ -256,37 +279,18 @@
             android:text="18420"
             android:textColor="#F3F4F6"
             android:textColorHint="#6B7280"
-            android:textSize="14sp" />
-    </LinearLayout>
-
-    <!-- Options Card -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="14dp"
-        android:background="@drawable/bg_card"
-        android:orientation="vertical"
-        android:padding="14dp">
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="4dp"
-            android:text="OPTIONS"
-            android:textColor="#34D399"
-            android:textSize="11sp"
-            android:textStyle="bold" />
+            android:textSize="13.5sp" />
 
         <CheckBox
             android:id="@+id/chkAutoStart"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
+            android:layout_marginTop="12dp"
             android:buttonTint="#3B82F6"
             android:paddingStart="6dp"
-            android:text="Auto-start streaming when app opens"
+            android:text="Auto-start camera when app opens"
             android:textColor="#E5E7EB"
-            android:textSize="13.5sp" />
+            android:textSize="13sp" />
 
         <CheckBox
             android:id="@+id/chkMic"
@@ -297,15 +301,20 @@
             android:paddingStart="6dp"
             android:text="Stream Phone Microphone (48 kHz)"
             android:textColor="#E5E7EB"
-            android:textSize="13.5sp" />
+            android:textSize="13sp" />
     </LinearLayout>
 
-    <!-- Action Controls -->
+    <Space
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:minHeight="18dp" />
+
+    <!-- Primary Actions -->
     <Button
         android:id="@+id/btnSwitchCam"
         android:layout_width="match_parent"
         android:layout_height="48dp"
-        android:layout_marginTop="14dp"
         android:background="@drawable/bg_button_pill"
         android:backgroundTint="#1F2633"
         android:stateListAnimator="@null"
@@ -318,25 +327,16 @@
     <Button
         android:id="@+id/btnToggle"
         android:layout_width="match_parent"
-        android:layout_height="56dp"
+        android:layout_height="58dp"
         android:layout_marginTop="10dp"
         android:background="@drawable/bg_button_pill"
         android:backgroundTint="#2563EB"
         android:stateListAnimator="@null"
-        android:text="Start Streaming"
+        android:text="Start Camera"
         android:textAllCaps="false"
         android:textColor="#FFFFFF"
-        android:textSize="16sp"
+        android:textSize="16.5sp"
         android:textStyle="bold" />
-
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
-        android:gravity="center"
-        android:text="Auto-reconnect keeps your call alive across temporary WiFi or USB drops."
-        android:textColor="#6B7280"
-        android:textSize="12sp" />
 
 </LinearLayout>
 </ScrollView>

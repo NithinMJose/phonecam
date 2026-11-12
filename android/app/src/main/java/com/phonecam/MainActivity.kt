@@ -32,6 +32,7 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var tvStatus: TextView
     private lateinit var viewStatusDot: View
+    private lateinit var tvConnectedPc: TextView
     private lateinit var tvStats: TextView
     private lateinit var tvError: TextView
     private lateinit var tvHostLabel: TextView
@@ -41,6 +42,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var btnModeUsb: Button
     private lateinit var btnModeWifi: Button
     private lateinit var btnDiscover: Button
+    private lateinit var btnAdvancedToggle: Button
+    private lateinit var layoutAdvanced: View
     private lateinit var chkAutoStart: CheckBox
     private lateinit var chkMic: CheckBox
     private lateinit var btnSwitchCam: Button
@@ -52,6 +55,7 @@ class MainActivity : AppCompatActivity() {
 
     private var selectedFrontCamera = false
     private var wifiMode = false
+    private var advancedExpanded = false
     private var suppressMicCheckEvent = false
 
     private val prefs by lazy { getSharedPreferences("phonecam_prefs", Context.MODE_PRIVATE) }
@@ -99,6 +103,7 @@ class MainActivity : AppCompatActivity() {
 
         tvStatus = findViewById(R.id.tvStatus)
         viewStatusDot = findViewById(R.id.viewStatusDot)
+        tvConnectedPc = findViewById(R.id.tvConnectedPc)
         tvStats = findViewById(R.id.tvStats)
         tvError = findViewById(R.id.tvError)
         tvHostLabel = findViewById(R.id.tvHostLabel)
@@ -108,7 +113,15 @@ class MainActivity : AppCompatActivity() {
         btnModeUsb = findViewById(R.id.btnModeUsb)
         btnModeWifi = findViewById(R.id.btnModeWifi)
         btnDiscover = findViewById(R.id.btnDiscover)
+        btnAdvancedToggle = findViewById(R.id.btnAdvancedToggle)
+        layoutAdvanced = findViewById(R.id.layoutAdvanced)
         chkAutoStart = findViewById(R.id.chkAutoStart)
+
+        btnAdvancedToggle.setOnClickListener {
+            advancedExpanded = !advancedExpanded
+            layoutAdvanced.visibility = if (advancedExpanded) View.VISIBLE else View.GONE
+            btnAdvancedToggle.text = if (advancedExpanded) "Hide ▴" else "Advanced ▾"
+        }
         chkMic = findViewById(R.id.chkMic)
         btnSwitchCam = findViewById(R.id.btnSwitchCam)
         btnToggle = findViewById(R.id.btnToggle)
@@ -192,35 +205,39 @@ class MainActivity : AppCompatActivity() {
             btnModeWifi.setTextColor(Color.WHITE)
             tvHostLabel.text = "PC WiFi / Hotspot IP"
             btnDiscover.visibility = View.VISIBLE
-            tvDiscoveryHint.visibility = View.VISIBLE
             val savedIp = prefs.getString("wifi_host", "") ?: ""
+            val savedName = prefs.getString("wifi_pc_name", "") ?: ""
             etHost.setText(savedIp)
             etHost.hint = "e.g. 192.168.1.42"
             if (triggerAutoScan) {
                 runDiscoveryScan()
-            } else if (savedIp.isBlank()) {
-                tvDiscoveryHint.text = "Tap 'Scan PC' or enter the IP shown on the Windows PhoneCam bar."
             } else {
-                tvDiscoveryHint.text = "Using saved WiFi IP (tap 'Scan PC' to refresh)."
+                tvDiscoveryHint.visibility = View.GONE
+                tvConnectedPc.text = when {
+                    savedName.isNotBlank() -> "PC: $savedName"
+                    savedIp.isNotBlank() -> "PC: $savedIp"
+                    else -> "Tap 'Find My PC' on the same WiFi or Hotspot"
+                }
             }
         } else {
             btnModeUsb.backgroundTintList = activeTint
             btnModeUsb.setTextColor(Color.WHITE)
             btnModeWifi.backgroundTintList = inactiveTint
             btnModeWifi.setTextColor(Color.parseColor("#9CA3AF"))
-            tvHostLabel.text = "Target Host (127.0.0.1 for USB adb reverse)"
+            tvHostLabel.text = "PC IP / Host (127.0.0.1 for USB)"
             btnDiscover.visibility = View.GONE
             tvDiscoveryHint.visibility = View.GONE
             etHost.setText("127.0.0.1")
+            tvConnectedPc.text = "USB Cable — plug into PC and tap Start Camera"
         }
     }
 
     private fun runDiscoveryScan() {
         scanJob?.cancel()
         btnDiscover.isEnabled = false
-        btnDiscover.text = "Scanning..."
+        btnDiscover.text = "Searching..."
         tvDiscoveryHint.visibility = View.VISIBLE
-        tvDiscoveryHint.text = "Broadcasting UDP discovery on port ${Protocol.DISCOVERY_PORT}..."
+        tvDiscoveryHint.text = "Looking for PhoneCam on your WiFi or Hotspot..."
 
         scanJob = uiScope.launch {
             try {
@@ -228,32 +245,40 @@ class MainActivity : AppCompatActivity() {
                 when {
                     results.isEmpty() -> {
                         tvDiscoveryHint.text =
-                            "No PC replied. Ensure Windows PhoneCam is open & allowed in Windows Firewall, or type the IP manually."
+                            "No PC found. Make sure PhoneCam is open on Windows, or enter IP in Advanced."
                     }
                     results.size == 1 -> {
                         val pc = results[0]
                         etHost.setText(pc.ip)
                         etPort.setText(pc.port.toString())
-                        prefs.edit().putString("wifi_host", pc.ip).apply()
-                        tvDiscoveryHint.text = "Found ${pc.name} at ${pc.ip}:${pc.port}"
+                        prefs.edit()
+                            .putString("wifi_host", pc.ip)
+                            .putString("wifi_pc_name", pc.name)
+                            .apply()
+                        tvConnectedPc.text = "PC: ${pc.name}"
+                        tvDiscoveryHint.visibility = View.GONE
                     }
                     else -> {
-                        val labels = results.map { "${it.name} (${it.ip}:${it.port})" }.toTypedArray()
+                        val labels = results.map { "${it.name} (${it.ip})" }.toTypedArray()
                         AlertDialog.Builder(this@MainActivity)
                             .setTitle("Select PC")
                             .setItems(labels) { _, which ->
                                 val pc = results[which]
                                 etHost.setText(pc.ip)
                                 etPort.setText(pc.port.toString())
-                                prefs.edit().putString("wifi_host", pc.ip).apply()
-                                tvDiscoveryHint.text = "Selected ${pc.name} at ${pc.ip}:${pc.port}"
+                                prefs.edit()
+                                    .putString("wifi_host", pc.ip)
+                                    .putString("wifi_pc_name", pc.name)
+                                    .apply()
+                                tvConnectedPc.text = "PC: ${pc.name}"
+                                tvDiscoveryHint.visibility = View.GONE
                             }
                             .show()
                     }
                 }
             } finally {
                 btnDiscover.isEnabled = true
-                btnDiscover.text = "Scan PC"
+                btnDiscover.text = "Find My PC"
             }
         }
     }
@@ -262,7 +287,39 @@ class MainActivity : AppCompatActivity() {
         super.onStart()
         stateJob = uiScope.launch {
             CameraStreamService.state.collectLatest { st ->
-                tvStatus.text = st.statusText
+                val savedName = prefs.getString("wifi_pc_name", "") ?: ""
+                val pcDisplay = when {
+                    !wifiMode -> "PC (USB Cable)"
+                    savedName.isNotBlank() -> savedName
+                    else -> etHost.text.toString().trim().ifBlank { "PC" }
+                }
+
+                tvStatus.text = when {
+                    st.isConnected -> "Connected"
+                    !st.isRunning && st.statusText == "Idle" -> "Ready"
+                    st.statusText.startsWith("Connecting") -> "Connecting..."
+                    st.statusText.startsWith("Reconnecting") -> "Reconnecting..."
+                    else -> st.statusText
+                }
+
+                if (st.isRunning) {
+                    tvConnectedPc.text = if (st.isConnected) {
+                        "Streaming to $pcDisplay"
+                    } else {
+                        "Target: $pcDisplay"
+                    }
+                } else {
+                    tvConnectedPc.text = if (!wifiMode) {
+                        "USB Cable — plug into PC and tap Start Camera"
+                    } else if (savedName.isNotBlank()) {
+                        "PC: $savedName"
+                    } else if (etHost.text.isNotBlank()) {
+                        "PC: ${etHost.text.toString().trim()}"
+                    } else {
+                        "Tap 'Find My PC' on the same WiFi or Hotspot"
+                    }
+                }
+
                 tvStats.text = String.format(
                     Locale.US,
                     "%dx%d @ %d fps | %.2f Mbps\nSent: %d | Dropped: %d",
@@ -284,7 +341,7 @@ class MainActivity : AppCompatActivity() {
                         suppressMicCheckEvent = false
                     }
                 }
-                btnToggle.text = if (st.isRunning) "Stop Streaming" else "Start Streaming"
+                btnToggle.text = if (st.isRunning) "Stop Camera" else "Start Camera"
                 btnToggle.backgroundTintList = ColorStateList.valueOf(
                     Color.parseColor(if (st.isRunning) "#DC2626" else "#2563EB")
                 )
@@ -349,7 +406,7 @@ class MainActivity : AppCompatActivity() {
         }
         if (host.isEmpty()) {
             tvError.visibility = View.VISIBLE
-            tvError.text = "Enter your PC's WiFi/Hotspot IP or tap 'Scan PC'."
+            tvError.text = "Tap 'Find My PC' on the same WiFi/Hotspot first."
             return
         }
         if (wifiMode) {

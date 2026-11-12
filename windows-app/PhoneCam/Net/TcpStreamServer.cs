@@ -91,8 +91,9 @@ public sealed class TcpStreamServer : IAsyncDisposable
     private string BuildWaitingStatus()
     {
         var ips = UdpDiscoveryResponder.GetLocalIpv4Addresses();
-        var ipHint = ips.Count > 0 ? string.Join(", ", ips) : "127.0.0.1";
-        return $"Listening on port {_listeningPort} | WiFi IP: {ipHint}";
+        return ips.Count > 0
+            ? $"Ready | WiFi IP: {string.Join(", ", ips)}"
+            : "Ready (USB Cable)";
     }
 
     private async Task AcceptLoopAsync(CancellationToken ct)

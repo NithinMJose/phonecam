@@ -3,8 +3,8 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="PhoneCam"
         Icon="pack://application:,,,/Assets/PhoneCam.ico"
-        Width="1200" Height="760"
-        MinWidth="860" MinHeight="560"
+        Width="1160" Height="740"
+        MinWidth="820" MinHeight="540"
         FontFamily="{StaticResource AppFont}"
         Background="#0C0F14"
         Foreground="#F3F4F6">
@@ -15,36 +15,31 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <!-- Top status + quick controls bar -->
+        <!-- Clean Minimal Top Bar -->
         <Border Grid.Row="0" Background="#161B24" BorderBrush="#262F3F" BorderThickness="1" CornerRadius="12" Padding="16,11" Margin="0,0,0,12">
             <DockPanel LastChildFill="False">
                 <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center">
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                        <Image Source="pack://application:,,,/Assets/PhoneCam.ico" Width="22" Height="22" Margin="0,0,9,0" RenderOptions.BitmapScalingMode="HighQuality" VerticalAlignment="Center" />
-                        <Border Background="#1E293B" CornerRadius="6" Padding="7,2" Margin="0,0,10,0" VerticalAlignment="Center">
-                            <TextBlock Text="PHONECAM" FontSize="10.5" FontWeight="Bold" Foreground="#60A5FA" />
+                        <Image Source="pack://application:,,,/Assets/PhoneCam.ico" Width="24" Height="24" Margin="0,0,10,0" RenderOptions.BitmapScalingMode="HighQuality" VerticalAlignment="Center" />
+                        <TextBlock Text="PhoneCam" FontSize="15.5" FontWeight="Bold" Foreground="#F3F4F6" Margin="0,0,12,0" VerticalAlignment="Center" />
+                        <Border Background="#11161F" BorderBrush="#262F3F" BorderThickness="1" CornerRadius="999" Padding="10,3" VerticalAlignment="Center">
+                            <TextBlock x:Name="TxtStatus" Text="Starting..." FontSize="12" FontWeight="Medium" Foreground="#93C5FD" />
                         </Border>
-                        <TextBlock x:Name="TxtStatus" Text="Starting..." FontSize="15" FontWeight="SemiBold" Foreground="#F3F4F6" VerticalAlignment="Center" />
                     </StackPanel>
-                    <TextBlock x:Name="TxtStats" Text="Waiting for stream..." FontFamily="Consolas" FontSize="11.5" Foreground="#9CA3AF" Margin="0,4,0,0" />
-                    <TextBlock x:Name="TxtVirtualCam" Text="Virtual Cam: starting..." FontSize="11" Foreground="#9CA3AF" Margin="0,2,0,0" />
+                    <TextBlock x:Name="TxtVirtualCam" Text="Virtual Cam: starting..." FontSize="11.5" Foreground="#9CA3AF" Margin="34,3,0,0" />
                 </StackPanel>
 
+                <!-- Essential Consumer Controls Only -->
                 <WrapPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Right">
-                    <Button x:Name="BtnVirtualCam" Content="VCam: Auto" Click="BtnVirtualCam_Click" Margin="0,0,8,0" />
                     <Button x:Name="BtnSwitchCam" Content="Cam: Back" Click="BtnSwitchCam_Click" Margin="0,0,8,0" />
                     <Button x:Name="BtnMic" Content="Mic: OFF" Click="BtnMic_Click" Margin="0,0,8,0" />
-                    <Button x:Name="BtnAdbReverse" Content="USB Re-bind" Click="BtnAdbReverse_Click" Margin="0,0,8,0" />
                     <Button x:Name="BtnRotate" Content="Rot: Auto" Click="BtnRotate_Click" Margin="0,0,8,0" />
-                    <Button x:Name="BtnKeyframe" Content="Req Keyframe" Click="BtnKeyframe_Click" Margin="0,0,8,0" />
-                    <ToggleButton x:Name="BtnSettings" Content="Settings" Checked="BtnSettings_Changed" Unchecked="BtnSettings_Changed" Margin="0,0,10,0" />
-                    <CheckBox x:Name="ChkDebugLog" Content="Logs" Checked="ChkDebugLog_Changed" Unchecked="ChkDebugLog_Changed"
-                              VerticalAlignment="Center" />
+                    <ToggleButton x:Name="BtnSettings" Content="Settings" Checked="BtnSettings_Changed" Unchecked="BtnSettings_Changed" />
                 </WrapPanel>
             </DockPanel>
         </Border>
 
-        <!-- Main content: Rounded Video Preview + Collapsible Settings Sidebar -->
+        <!-- Main content: Clean Rounded Preview + Collapsible Settings Sidebar -->
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
@@ -53,15 +48,12 @@
 
             <Border Grid.Column="0" Background="#07090D" BorderBrush="#1E2532" BorderThickness="1" CornerRadius="12" ClipToBounds="True">
                 <Grid>
-                    <!-- Shown when VideoPreview.Source is null -->
+                    <!-- Shown cleanly when idle -->
                     <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" IsHitTestVisible="False">
-                        <Border Width="54" Height="54" CornerRadius="16" Background="#131924" BorderBrush="#262F3F" BorderThickness="1" Margin="0,0,0,12">
-                            <Path Data="M 15,18 C 15,16.3 16.3,15 18,15 L 30,15 C 31.7,15 33,16.3 33,18 L 33,23 L 39,18.5 L 39,35.5 L 33,31 L 33,36 C 33,37.7 31.7,39 30,39 L 18,39 C 16.3,39 15,37.7 15,36 Z"
-                                  Fill="#3B82F6" Opacity="0.85" />
-                        </Border>
-                        <TextBlock Text="Ready to Receive Video" FontSize="16" FontWeight="SemiBold" Foreground="#D1D5DB" HorizontalAlignment="Center" />
-                        <TextBlock Text="Open PhoneCam on Android and tap Start Streaming (USB or WiFi)."
-                                   FontSize="12.5" Foreground="#6B7280" Margin="0,4,0,0" HorizontalAlignment="Center" />
+                        <Image Source="pack://application:,,,/Assets/PhoneCam.ico" Width="56" Height="56" Opacity="0.9" Margin="0,0,0,14" RenderOptions.BitmapScalingMode="HighQuality" />
+                        <TextBlock Text="Waiting for Phone" FontSize="18" FontWeight="SemiBold" Foreground="#E5E7EB" HorizontalAlignment="Center" />
+                        <TextBlock Text="Open PhoneCam on Android via USB or WiFi, then tap Start Camera."
+                                   FontSize="13" Foreground="#6B7280" Margin="0,6,0,0" HorizontalAlignment="Center" />
                     </StackPanel>
 
                     <Border CornerRadius="12" ClipToBounds="True">
@@ -71,7 +63,7 @@
             </Border>
 
             <!-- Collapsible Settings Sidebar -->
-            <Border x:Name="SettingsPanel" Grid.Column="1" Width="308" Background="#161B24" BorderBrush="#262F3F" BorderThickness="1"
+            <Border x:Name="SettingsPanel" Grid.Column="1" Width="312" Background="#161B24" BorderBrush="#262F3F" BorderThickness="1"
                     CornerRadius="12" Padding="14" Margin="12,0,0,0" Visibility="Collapsed">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <StackPanel>
@@ -80,7 +72,7 @@
                         <!-- Video Card -->
                         <Border Background="#11161F" BorderBrush="#222938" BorderThickness="1" CornerRadius="10" Padding="12" Margin="0,0,0,10">
                             <StackPanel>
-                                <TextBlock Text="VIDEO STREAM" FontSize="10.5" FontWeight="Bold" Foreground="#60A5FA" Margin="0,0,0,10" />
+                                <TextBlock Text="VIDEO" FontSize="10.5" FontWeight="Bold" Foreground="#60A5FA" Margin="0,0,0,10" />
 
                                 <TextBlock Text="Resolution" FontSize="12" Foreground="#9CA3AF" />
                                 <ComboBox x:Name="CmbResolution" Margin="0,4,0,10">
@@ -133,7 +125,7 @@
                         <!-- Microphone Card -->
                         <Border Background="#11161F" BorderBrush="#222938" BorderThickness="1" CornerRadius="10" Padding="12" Margin="0,0,0,10">
                             <StackPanel>
-                                <TextBlock Text="MICROPHONE (VIRTUAL MIC)" FontSize="10.5" FontWeight="Bold" Foreground="#34D399" Margin="0,0,0,8" />
+                                <TextBlock Text="MICROPHONE" FontSize="10.5" FontWeight="Bold" Foreground="#34D399" Margin="0,0,0,8" />
                                 <TextBlock x:Name="TxtVirtualMicStatus" Text="Checking audio devices..." FontSize="11"
                                            Foreground="#FBBF24" TextWrapping="Wrap" Margin="0,0,0,8" />
 
@@ -160,10 +152,10 @@
                             </StackPanel>
                         </Border>
 
-                        <!-- Window Card -->
-                        <Border Background="#11161F" BorderBrush="#222938" BorderThickness="1" CornerRadius="10" Padding="12">
+                        <!-- Startup & Window Card -->
+                        <Border Background="#11161F" BorderBrush="#222938" BorderThickness="1" CornerRadius="10" Padding="12" Margin="0,0,0,10">
                             <StackPanel>
-                                <TextBlock Text="APP &amp; STARTUP" FontSize="10.5" FontWeight="Bold" Foreground="#9CA3AF" Margin="0,0,0,8" />
+                                <TextBlock Text="STARTUP &amp; TRAY" FontSize="10.5" FontWeight="Bold" Foreground="#9CA3AF" Margin="0,0,0,8" />
                                 <CheckBox x:Name="ChkStartWithWindows" Content="Start minimized at Windows login"
                                           Checked="ChkStartWithWindows_Changed" Unchecked="ChkStartWithWindows_Changed" Margin="0,0,0,6" />
                                 <CheckBox x:Name="ChkMinimizeToTray" Content="Minimize to tray on close"
@@ -171,6 +163,30 @@
                                 <Button Content="Hide to Tray" Click="BtnHideToTray_Click" Padding="10,6" />
                             </StackPanel>
                         </Border>
+
+                        <!-- Collapsible Advanced & Diagnostics -->
+                        <Expander IsExpanded="False">
+                            <Expander.Header>
+                                <TextBlock Text="ADVANCED &amp; DIAGNOSTICS" FontSize="10.5" FontWeight="Bold" Foreground="#9CA3AF" />
+                            </Expander.Header>
+                            <StackPanel>
+                                <Border Background="#0B0E14" BorderBrush="#1E2532" BorderThickness="1" CornerRadius="8" Padding="9" Margin="0,0,0,10">
+                                    <TextBlock x:Name="TxtStats" Text="Waiting for stream..." FontFamily="Consolas" FontSize="11"
+                                               Foreground="#D1D5DB" TextWrapping="Wrap" />
+                                </Border>
+                                <Grid Margin="0,0,0,8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="8" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <Button x:Name="BtnVirtualCam" Grid.Column="0" Content="VCam: Auto" Click="BtnVirtualCam_Click" FontSize="11.5" Padding="8,6" />
+                                    <Button x:Name="BtnAdbReverse" Grid.Column="2" Content="USB Re-bind" Click="BtnAdbReverse_Click" FontSize="11.5" Padding="8,6" />
+                                </Grid>
+                                <Button x:Name="BtnKeyframe" Content="Request Keyframe" Click="BtnKeyframe_Click" FontSize="11.5" Padding="8,6" Margin="0,0,0,10" />
+                                <CheckBox x:Name="ChkDebugLog" Content="Show Debug Log" Checked="ChkDebugLog_Changed" Unchecked="ChkDebugLog_Changed" />
+                            </StackPanel>
+                        </Expander>
                     </StackPanel>
                 </ScrollViewer>
             </Border>
